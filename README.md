@@ -14,9 +14,9 @@ HTML · CSS · JavaScript
 
 ## 🚀 Cara Menjalankan
 1. Clone repo ini
-2. Buka `index.html` di browser
+2. Buka `keuangan.html` di browser
 
 > Data disimpan di localStorage browser, jadi tidak terkirim ke server.
 
 ## 🔗 Demo
-[Lihat demo](link-github-pages)
+[Lihat demo](https://wiruu31.github.io/personal-finance-v.1.2.1/keuangan.html)
