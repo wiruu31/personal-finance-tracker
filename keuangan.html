@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id" data-tema="terang">
+<head>
+  <!-- ===== HEAD START =====
+       Pengaturan dasar halaman. Edit judul tab di <title>.
+       File yang dipakai (semua satu folder):
+       keuangan.css, storage.js, ui.js, halaman.js, app.js,
+       manifest.webmanifest, sw.js, dan folder icons/
+       ============================================================ -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#EEF2E3">
+  <meta name="description" content="Catatan keuangan pribadi: net worth, aset, utang, budget, dan goals.">
+
+  <!-- Aplikasi yang bisa dipasang (PWA): manifest, ikon, dan pengaturan iPhone/iPad -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="keuangan">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <title>keuangan | Personal Finance</title>
+
+  <!-- Ikon tab browser (logo K dengan panah naik; sumber: icons/icon.svg) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='hj' gradientUnits='userSpaceOnUse' x1='150' y1='110' x2='330' y2='410'%3E%3Cstop offset='0' stop-color='%236BF2A6'/%3E%3Cstop offset='1' stop-color='%231E9E5B'/%3E%3C/linearGradient%3E%3ClinearGradient id='emas' gradientUnits='userSpaceOnUse' x1='170' y1='256' x2='306' y2='120'%3E%3Cstop offset='0' stop-color='%23E9A92B'/%3E%3Cstop offset='1' stop-color='%23F5C84C'/%3E%3C/linearGradient%3E%3CradialGradient id='bg' cx='.25' cy='.15' r='1.05'%3E%3Cstop offset='0' stop-color='%2314301F'/%3E%3Cstop offset='.6' stop-color='%230A1B11'/%3E%3Cstop offset='1' stop-color='%2306100A'/%3E%3C/radialGradient%3E%3CclipPath id='k'%3E%3Crect width='512' height='512' rx='112'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23k)'%3E%3Crect width='512' height='512' fill='url(%23bg)'/%3E%3C/g%3E%3Cg transform='translate(256 256) scale(1.12) translate(-256 -256) translate(18 0)' fill='none' stroke-width='56' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M170 120V392' stroke='url(%23hj)'/%3E%3Cpath d='M170 256L306 392' stroke='url(%23hj)'/%3E%3Cpath d='M170 256L306 120' stroke='url(%23emas)'/%3E%3Cpath d='M242 120H306V184' stroke='url(%23emas)'/%3E%3C/g%3E%3C/svg%3E">
+
+  <!-- Font Fraunces (angka & judul) + Manrope (isi). Butuh internet; offline pakai font bawaan -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="keuangan.css">
+  <!-- ===== HEAD END ===== -->
+</head>
+<body>
+
+  <!-- ===== NAVIGASI START =====
+       Bawah layar di HP, samping kiri di layar lebar.
+       data-tab harus sama dengan id "view-..." di bawah.
+       ============================================================ -->
+  <nav class="nav" aria-label="Menu utama">
+    <div class="nav-merek" aria-hidden="true"><img class="logo logo--menu" src="icons/icon.svg" alt="" width="34" height="34"><b>keuangan</b></div>
+
+    <button type="button" class="nav-btn is-active" data-aksi="tab" data-tab="home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5M5.5 10v9.5h13V10M10 19.5v-5h4v5"/></svg><span>Home</span></button>
+    <button type="button" class="nav-btn" data-aksi="tab" data-tab="arus">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v14m0 0-3-3m3 3 3-3M17 20V6m0 0-3 3m3-3 3 3"/></svg><span>Arus Kas</span></button>
+    <button type="button" class="nav-btn" data-aksi="tab" data-tab="transaksi">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span>Transaksi</span></button>
+    <button type="button" class="nav-btn" data-aksi="tab" data-tab="kekayaan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8.5h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2zM3.5 8.5l11-4 1.2 4M16.5 14.5h4"/></svg><span>Kekayaan</span></button>
+    <button type="button" class="nav-btn" data-aksi="tab" data-tab="goals">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/></svg><span>Goals</span></button>
+    <button type="button" class="nav-btn" data-aksi="tab" data-tab="pengaturan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9M13 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM7 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"/></svg><span>Atur</span></button>
+  </nav>
+  <!-- ===== NAVIGASI END ===== -->
+
+
+  <div class="isi-app">
+
+    <!-- ===== HEADER START =====
+         Judul halaman + pemilih bulan (‹ bulan ›).
+         Ketuk nama bulan = kembali ke bulan ini.
+         Pemilih bulan hanya muncul di Home, Arus Kas, Transaksi.
+         ============================================================ -->
+    <header class="app-header">
+      <div class="app-title"><img class="logo" src="icons/icon.svg" alt="" width="32" height="32"><span id="judulHalaman">Home</span></div>
+
+      <div class="month-nav" id="monthNav">
+        <button type="button" class="icon-btn" data-aksi="bulan-sebelum" aria-label="Bulan sebelumnya">&lsaquo;</button>
+        <button type="button" class="month-label" id="labelBulan" data-aksi="bulan-ini" title="Ketuk untuk ke bulan ini"></button>
+        <button type="button" class="icon-btn" data-aksi="bulan-berikut" aria-label="Bulan berikutnya">&rsaquo;</button>
+      </div>
+    </header>
+    <!-- ===== HEADER END ===== -->
+
+
+    <main>
+
+      <!-- ===== HOME START =====
+           Net worth, total assets, cash, wallets, liabilities, donat.
+           Isi digambar oleh halaman.js (renderHome).
+           ============================================================ -->
+      <section class="view is-active" id="view-home"><div id="isi-home"></div></section>
+      <!-- ===== HOME END ===== -->
+
+
+      <!-- ===== ARUS KAS START =====
+           Income / Expenses / Liabilitas: budget vs actual.
+           Digambar oleh halaman.js (renderArus).
+           ============================================================ -->
+      <section class="view" id="view-arus"><div id="isi-arus"></div></section>
+      <!-- ===== ARUS KAS END ===== -->
+
+
+      <!-- ===== TRANSAKSI START =====
+           Filter + pencarian + daftar transaksi bulan terpilih.
+           Ketuk satu baris untuk mengubah / menghapus.
+           ============================================================ -->
+      <section class="view" id="view-transaksi">
+        <div class="filter-bar">
+          <button type="button" class="chip is-active" data-aksi="filter" data-tipe="semua">semua</button>
+          <button type="button" class="chip" data-aksi="filter" data-tipe="masuk">income</button>
+          <button type="button" class="chip" data-aksi="filter" data-tipe="keluar">expenses</button>
+          <button type="button" class="chip" data-aksi="filter" data-tipe="transfer">transfer</button>
+        </div>
+        <input type="search" class="cari" id="inputCari" placeholder="cari kategori, dompet, catatan..." autocomplete="off" aria-label="Cari transaksi">
+        <div id="listTransaksi"></div>
+      </section>
+      <!-- ===== TRANSAKSI END ===== -->
+
+
+      <!-- ===== KEKAYAAN START =====
+           Sub-halaman: Dompet / Aset / Utang. Digambar oleh
+           halaman.js (renderKekayaan).
+           ============================================================ -->
+      <section class="view" id="view-kekayaan"><div id="isi-kekayaan"></div></section>
+      <!-- ===== KEKAYAAN END ===== -->
+
+
+      <!-- ===== GOALS START =====
+           Target tabungan. Digambar oleh halaman.js (renderGoals).
+           ============================================================ -->
+      <section class="view" id="view-goals"><div id="isi-goals"></div></section>
+      <!-- ===== GOALS END ===== -->
+
+
+      <!-- ===== PENGATURAN START =====
+           Tampilan, anggaran & kategori, cadangan data.
+           Digambar oleh halaman.js (renderPengaturan).
+           ============================================================ -->
+      <section class="view" id="view-pengaturan">
+        <div id="isi-pengaturan"></div>
+        <!-- Input file tersembunyi (dibuka oleh tombol impor) -->
+        <input type="file" id="inputImpor" accept="application/json,.json" hidden>
+      </section>
+      <!-- ===== PENGATURAN END ===== -->
+
+
+      <!-- ===== FOOTER START =====
+           Hak cipta. Ganti "keuangan" di bawah dengan nama kamu /
+           nama brand-mu. Tahun diisi otomatis oleh app.js.
+           ============================================================ -->
+      <footer class="footer">
+        <p>&copy; <span id="tahunCopyright">2026</span> Muh Geris Wiruno Mandawa. Semua hak dilindungi.</p>
+        <p class="footer-kecil">Data tersimpan di perangkat ini saja.</p>
+      </footer>
+      <!-- ===== FOOTER END ===== -->
+
+    </main>
+  </div>
+
+  <!-- Tombol + (fungsinya mengikuti halaman yang terbuka; diatur app.js) -->
+  <button type="button" class="fab" id="fabTambah" data-aksi="fab" aria-label="Tambah">+</button>
+
+
+  <!-- ===== DIALOG TRANSAKSI START =====
+       Form tambah / ubah transaksi (muncul dari bawah layar).
+       Pilihan kategori & dompet diisi oleh app.js.
+       Saat membayar utang, pilihan tipe disembunyikan.
+       ============================================================ -->
+  <dialog class="sheet" id="dialogTransaksi">
+    <form id="formTransaksi" data-submit="transaksi" autocomplete="off">
+      <h2 class="sheet-title" id="judulForm">Transaksi baru</h2>
+      <p class="info-utang" id="infoUtang" hidden></p>
+
+      <div class="seg" id="segTipe" role="radiogroup" aria-label="Tipe transaksi">
+        <label class="seg-item seg-item--keluar">
+          <input type="radio" name="tipe" value="keluar" checked><span>Expense</span>
+        </label>
+        <label class="seg-item seg-item--masuk">
+          <input type="radio" name="tipe" value="masuk"><span>Income</span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label for="fJumlah">jumlah (Rp)</label>
+        <input type="text" id="fJumlah" inputmode="numeric" placeholder="0" required>
+        <p class="preview" id="fJumlahPreview"></p>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="fKategori">kategori</label>
+          <select id="fKategori" required></select>
+        </div>
+        <div class="field">
+          <label for="fDompet">dompet</label>
+          <select id="fDompet" required></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fTanggal">tanggal</label>
+        <input type="date" id="fTanggal" required>
+      </div>
+
+      <div class="field">
+        <label for="fCatatan">catatan (opsional)</label>
+        <input type="text" id="fCatatan" maxlength="80" placeholder="misal: makan siang">
+      </div>
+
+      <div class="sheet-actions">
+        <button type="button" class="btn btn--danger" id="btnHapusTransaksi" data-aksi="hapus-transaksi" hidden>hapus</button>
+        <button type="button" class="btn" data-aksi="tutup-dialog">batal</button>
+        <button type="submit" class="btn btn--solid">simpan</button>
+      </div>
+    </form>
+  </dialog>
+  <!-- ===== DIALOG TRANSAKSI END ===== -->
+
+
+  <!-- ===== DIALOG UMUM START =====
+       Satu dialog serbaguna untuk semua form lain (dompet, aset,
+       utang, goal, transfer, kategori, dll). Isi field-nya dibuat
+       oleh app.js (fungsi bukaFormUmum).
+       ============================================================ -->
+  <dialog class="sheet" id="dialogUmum">
+    <form id="formUmum" autocomplete="off">
+      <h2 class="sheet-title" id="judulUmum"></h2>
+      <p class="info-utang" id="infoUmum" hidden></p>
+      <div id="isiUmum"></div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn--danger" id="btnHapusUmum" data-aksi="hapus-umum" hidden>hapus</button>
+        <button type="button" class="btn" data-aksi="tutup-dialog">batal</button>
+        <button type="submit" class="btn btn--solid" id="btnSimpanUmum">simpan</button>
+      </div>
+    </form>
+  </dialog>
+  <!-- ===== DIALOG UMUM END ===== -->
+
+
+  <!-- Notifikasi kecil (diisi oleh app.js -> toast) -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Urutan WAJIB: storage.js -> ui.js -> halaman.js -> app.js -->
+  <script src="storage.js"></script>
+  <script src="ui.js"></script>
+  <script src="halaman.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

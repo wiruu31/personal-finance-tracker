@@ -1,0 +1,18 @@
+{
+  "id": "./keuangan.html",
+  "name": "keuangan - Personal Finance",
+  "short_name": "keuangan",
+  "description": "Catatan keuangan pribadi: net worth, aset, utang, budget, dan goals.",
+  "lang": "id",
+  "start_url": "./keuangan.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF2E3",
+  "theme_color": "#1E9E5B",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
