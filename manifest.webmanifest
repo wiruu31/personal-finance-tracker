@@ -1,7 +1,7 @@
 {
   "id": "./keuangan.html",
   "name": "keuangan - Personal Finance",
-  "short_name": "keuangan",
+  "short_name": "Personal Finance",
   "description": "Catatan keuangan pribadi: net worth, aset, utang, budget, dan goals.",
   "lang": "id",
   "start_url": "./keuangan.html",
