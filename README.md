@@ -19,4 +19,4 @@ HTML · CSS · JavaScript
 > Data disimpan di localStorage browser, jadi tidak terkirim ke server.
 
 ## 🔗 Demo
-[Lihat demo](https://wiruu31.github.io/personal-finance-v.1.2.1/keuangan.html)
+[Lihat demo](https://wiruu31.github.io/personal-finance-tracker/keuangan.html)
