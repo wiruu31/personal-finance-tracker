@@ -7,7 +7,7 @@ Web app sederhana untuk memantau kondisi keuangan pribadi: net worth, aset, utan
 - Pencatatan aset dan utang
 - Target (goals) keuangan
 - Grafik donat untuk melihat komposisi keuangan
-- Tema hijau
+- Warna tema bisa di costum sendiri
 
 ## 🛠️ Tech Stack
 HTML · CSS · JavaScript
