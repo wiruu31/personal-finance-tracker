@@ -1,5 +1,5 @@
 /* ================================================================
-   STORAGE.JS - URUSAN DATA (SIMPAN / AMBIL)  [versi 2]
+   STORAGE.JS - URUSAN DATA (SIMPAN / AMBIL)  [aplikasi v1.3.1, data skema 2]
    Semua akses data aplikasi lewat objek "Data" di file ini.
    File lain (ui.js, halaman.js, app.js) TIDAK menyentuh localStorage.
 
@@ -26,16 +26,19 @@
 const KUNCI_DATA = "keuangan.v2";
 const KUNCI_LAMA = "keuangan.v1";
 
+const VERSI_APP = "1.3.1";
+
 const MODE_TEMA = ["auto", "terang", "gelap"];
 
-/* Pilihan warna tema (semua hijau). Bisa juga pilih warna bebas. */
+/* Palet warna tema. Tiap palet: aksen (hex), latar gelap (latar),
+   tiga cahaya sudut (g1, g2, g3). Pengguna juga bisa membuat palet
+   kustom sendiri dari halaman Pengaturan. Palet pertama = bawaan. */
 const PRESET_WARNA = [
-  { id: "zamrud", nama: "Zamrud", hex: "#1E9E5A" },
-  { id: "hutan",  nama: "Hutan",  hex: "#2F7A45" },
-  { id: "mint",   nama: "Mint",   hex: "#3CCB8A" },
-  { id: "giok",   nama: "Giok",   hex: "#00A86B" },
-  { id: "zaitun", nama: "Zaitun", hex: "#6B8E23" },
-  { id: "daun",   nama: "Daun",   hex: "#5FB342" }
+  { id: "navy",    nama: "Tech Navy",  hex: "#38E3A0", latar: "#060912", g1: "#3B5BDB", g2: "#8B5CF6", g3: "#C99A3B" },
+  { id: "zamrud",  nama: "Zamrud",     hex: "#2FD38B", latar: "#070F0A", g1: "#1E9E5B", g2: "#F2C14E", g3: "#14B8A6" },
+  { id: "ungu",    nama: "Ungu Malam", hex: "#A78BFA", latar: "#09060F", g1: "#7C3AED", g2: "#EC4899", g3: "#38BDF8" },
+  { id: "samudra", nama: "Samudra",    hex: "#38BDF8", latar: "#050D14", g1: "#0EA5E9", g2: "#6366F1", g3: "#34D399" },
+  { id: "senja",   nama: "Senja",      hex: "#F5A623", latar: "#0F0906", g1: "#C2410C", g2: "#B45309", g3: "#F59E0B" }
 ];
 
 /* Jenis dompet. "tunai" = Cash on Hand, sisanya = Digital Wallets & Bank */
@@ -98,10 +101,18 @@ function intMin(x, min, pesan) {
   return n;
 }
 
+/* Pengaturan tampilan bawaan: gelap, palet pertama */
+function pengaturanAwal() {
+  const p = PRESET_WARNA[0];
+  return { mode: "gelap", aksen: p.hex, preset: p.id, latar: p.latar, cahaya1: p.g1, cahaya2: p.g2 };
+}
+
+const HEX6 = /^#[0-9a-fA-F]{6}$/;
+
 function rangka() {
   return {
     versi: 2,
-    pengaturan: { mode: "auto", aksen: PRESET_WARNA[0].hex, preset: PRESET_WARNA[0].id },
+    pengaturan: pengaturanAwal(),
     dompet: [],      // { id, nama, jenis, saldoAwal }
     kategori: [],    // { id, nama, tipe, batas }   batas = budget per bulan
     transaksi: [],   // { id, dompetId, kategoriId, tipe, jumlah, tanggal, catatan, utangId? }
@@ -211,11 +222,22 @@ function cekData(d) {
 function rapikanData(d) {
   d.versi = 2;
   const p = d.pengaturan || {};
+  const awal = pengaturanAwal();
+  const lengkap = HEX6.test(p.latar || "") && HEX6.test(p.cahaya1 || "") && HEX6.test(p.cahaya2 || "");
   d.pengaturan = {
-    mode: MODE_TEMA.includes(p.mode) ? p.mode : "auto",
-    aksen: /^#[0-9a-fA-F]{6}$/.test(p.aksen || "") ? p.aksen : PRESET_WARNA[0].hex,
-    preset: String(p.preset || "")
+    mode: MODE_TEMA.includes(p.mode) ? p.mode : awal.mode,
+    aksen: HEX6.test(p.aksen || "") ? p.aksen : awal.aksen,
+    preset: String(p.preset || awal.preset),
+    latar: HEX6.test(p.latar || "") ? p.latar : awal.latar,
+    cahaya1: HEX6.test(p.cahaya1 || "") ? p.cahaya1 : awal.cahaya1,
+    cahaya2: HEX6.test(p.cahaya2 || "") ? p.cahaya2 : awal.cahaya2
   };
+  /* Data dari versi sebelum palet (belum ada latar & cahaya): pakai palet bawaan.
+     Warna kustom lama tetap dipertahankan sebagai aksen. */
+  if (!lengkap) {
+    if (p.preset === "kustom") d.pengaturan.preset = "kustom";
+    else { d.pengaturan.aksen = awal.aksen; d.pengaturan.preset = awal.preset; }
+  }
   d.transaksi.forEach((t) => { t.catatan = String(t.catatan || "").slice(0, 80); });
   d.transfer.forEach((t) => { t.catatan = String(t.catatan || "").slice(0, 80); });
   d.aset.forEach((a) => { a.catatan = String(a.catatan || "").slice(0, 80); a.riwayat.sort(urutTanggal); });
@@ -723,7 +745,7 @@ const Data = {
 
   /* ------------------------------------------------------------
      [DATA 9] PENGATURAN TAMPILAN
-     p boleh berisi sebagian: { mode, aksen, preset }
+     p boleh berisi sebagian: { mode, aksen, latar, cahaya1, cahaya2, preset }
      ------------------------------------------------------------ */
   async setPengaturan(p) {
     return this._ubah((db) => {
@@ -731,10 +753,11 @@ const Data = {
         if (!MODE_TEMA.includes(p.mode)) throw new Error("Mode tampilan tidak valid");
         db.pengaturan.mode = p.mode;
       }
-      if (p.aksen !== undefined) {
-        if (!/^#[0-9a-fA-F]{6}$/.test(p.aksen)) throw new Error("Warna tidak valid");
-        db.pengaturan.aksen = p.aksen;
-      }
+      ["aksen", "latar", "cahaya1", "cahaya2"].forEach((k) => {
+        if (p[k] === undefined) return;
+        if (!HEX6.test(p[k])) throw new Error("Warna tidak valid");
+        db.pengaturan[k] = p[k];
+      });
       if (p.preset !== undefined) db.pengaturan.preset = String(p.preset);
     });
   },

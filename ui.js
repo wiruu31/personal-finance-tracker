@@ -1,5 +1,5 @@
 /* ================================================================
-   UI.JS - HELPER, PERHITUNGAN, GRAFIK, TEMA  [versi 2]
+   UI.JS - HELPER, PERHITUNGAN, GRAFIK, TEMA  [aplikasi v1.3.1]
    Isi file ini: helper format (rupiah, tanggal), fungsi hitung
    (net worth, aset, utang, budget vs actual), penggambar grafik
    (donat & garis, SVG murni tanpa library), dan penerap tema.
@@ -306,8 +306,8 @@ function infoGoal(g) {
    di Pengaturan menentukan warnanya.
    ================================================================ */
 const PALET = [
-  "#2E9E5B", "#D4A62A", "#C8553D", "#8DA136", "#9C5A8B", "#E08A2E",
-  "#3FB8A0", "#D96A8C", "#6B8F5E", "#B59A62", "#A8443F", "#7CC24A"
+  "#2FD38B", "#F2C14E", "#E5705A", "#8B7CF6", "#38BDF8", "#E08A2E",
+  "#3FB8A0", "#D96A8C", "#7BC44E", "#B58BE0", "#F2806B", "#5EA7F2"
 ];
 
 function warnaKategori(data, kategori) {
@@ -410,6 +410,49 @@ function garisSVG(titik) {
   return svg;
 }
 
+/* Grafik mini untuk kartu Net Worth: titik: [{ label, nilai }] */
+function sparkSVG(titik) {
+  const W = 420, H = 126, L = 14, R = 14, T = 26, B = 24;
+  const nilai = titik.map((t) => t.nilai);
+  let min = Math.min.apply(null, nilai);
+  let max = Math.max.apply(null, nilai);
+  if (min === max) { min -= 1; max += 1; }
+  const pad = (max - min) * 0.1;
+  min -= pad; max += pad;
+
+  const x = (i) => (titik.length === 1 ? W / 2 : L + (i * (W - L - R)) / (titik.length - 1));
+  const y = (v) => T + ((max - v) / (max - min)) * (H - T - B);
+  const pts = titik.map((t, i) => [x(i), y(t.nilai)]);
+  const garis = "M" + pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" L");
+  const alas = H - B + 2;
+  const area = garis + " L" + pts[pts.length - 1][0].toFixed(1) + " " + alas + " L" + pts[0][0].toFixed(1) + " " + alas + " Z";
+
+  let svg = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="tren net worth ' + titik.length + ' bulan">';
+  svg += '<path class="spark-area" d="' + area + '"/><path class="spark-garis" d="' + garis + '"/>';
+  pts.forEach((p, i) => {
+    const akhir = i === pts.length - 1;
+    svg += '<circle class="spark-titik' + (akhir ? " is-akhir" : "") + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (akhir ? 5 : 3.6) +
+           '"><title>' + esc(titik[i].label) + ": " + rupiah(titik[i].nilai) + "</title></circle>";
+    svg += '<text class="spark-label' + (akhir ? " is-akhir" : "") + '" x="' + p[0].toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle">' + esc(titik[i].label) + "</text>";
+  });
+  const ak = pts[pts.length - 1];
+  svg += '<text class="spark-nilai" x="' + ak[0].toFixed(1) + '" y="' + Math.max(13, ak[1] - 12).toFixed(1) + '" text-anchor="end">' +
+         esc(rupiahRingkas(titik[titik.length - 1].nilai)) + "</text>";
+  return svg + "</svg>";
+}
+
+/* Ikon garis kecil untuk kartu ringkasan (nama -> path SVG) */
+const IKON = {
+  bank: "M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18",
+  kartu: "M3 5h18v14H3zM3 10h18M7 15h3",
+  tunai: "M3 6.5h18v11H3zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z",
+  hp: "M7 3h10v18H7zM11 18h2",
+  grafik: "M4 20V5M4 20h16M8 16v-5M12 16V8M16 16v-3"
+};
+function ikon(nama) {
+  return '<svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (IKON[nama] || "") + '"/></svg>';
+}
+
 /* Batang tipis berwarna (progress) */
 function meterHTML(persen, status) {
   return '<span class="meter"><span class="meter-isi is-' + status + '" style="width:' + Math.max(0, Math.min(100, persen)) + '%"></span></span>';
@@ -418,8 +461,8 @@ function meterHTML(persen, status) {
 
 
 /* ===== TEMA START =====
-   Menerapkan mode (auto/terang/gelap) dan warna aksen.
-   Semua warna lain diturunkan dari --aksen lewat CSS.
+   Menerapkan mode (auto/terang/gelap) dan palet warna
+   (aksen, latar, cahaya sudut). Warna lain diturunkan lewat CSS.
    ================================================================ */
 function luminan(hex) {
   const n = parseInt(hex.slice(1), 16);
@@ -439,10 +482,15 @@ function modeGelap(mode) {
 function terapkanTema(p) {
   const gelap = modeGelap(p.mode);
   const root = document.documentElement;
+  const pr = PRESET_WARNA.find((x) => x.id === p.preset);
   root.dataset.tema = gelap ? "gelap" : "terang";
   root.style.setProperty("--aksen", p.aksen);
-  root.style.setProperty("--aksen-teks", luminan(p.aksen) > 0.4 ? "#0B1A10" : "#FFFFFF");
+  root.style.setProperty("--aksen-teks", luminan(p.aksen) > 0.4 ? "#04110A" : "#FFFFFF");
+  root.style.setProperty("--base", p.latar);
+  root.style.setProperty("--gl1", p.cahaya1);
+  root.style.setProperty("--gl2", p.cahaya2);
+  root.style.setProperty("--gl3", pr ? pr.g3 : p.cahaya1);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", gelap ? "#08140D" : "#EEF2E3");
+  if (meta) meta.setAttribute("content", gelap ? p.latar : "#F2F5EE");
 }
 /* ===== TEMA END ===== */

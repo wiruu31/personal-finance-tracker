@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="id" data-tema="terang">
+<html lang="id" data-tema="gelap">
 <head>
   <!-- ===== HEAD START =====
        Pengaturan dasar halaman. Edit judul tab di <title>.
        File yang dipakai (semua satu folder):
-       keuangan.css, storage.js, ui.js, halaman.js, app.js,
+       keuangan.css (v1.3.1), storage.js, ui.js, halaman.js, app.js,
        manifest.webmanifest, sw.js, dan folder icons/
        ============================================================ -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#EEF2E3">
+  <meta name="theme-color" content="#060912">
   <meta name="description" content="Catatan keuangan pribadi: net worth, aset, utang, budget, dan goals.">
 
   <!-- Aplikasi yang bisa dipasang (PWA): manifest, ikon, dan pengaturan iPhone/iPad -->
@@ -18,17 +18,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="keuangan">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <title>keuangan | Personal Finance</title>
 
   <!-- Ikon tab browser (logo K dengan panah naik; sumber: icons/icon.svg) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='hj' gradientUnits='userSpaceOnUse' x1='150' y1='110' x2='330' y2='410'%3E%3Cstop offset='0' stop-color='%236BF2A6'/%3E%3Cstop offset='1' stop-color='%231E9E5B'/%3E%3C/linearGradient%3E%3ClinearGradient id='emas' gradientUnits='userSpaceOnUse' x1='170' y1='256' x2='306' y2='120'%3E%3Cstop offset='0' stop-color='%23E9A92B'/%3E%3Cstop offset='1' stop-color='%23F5C84C'/%3E%3C/linearGradient%3E%3CradialGradient id='bg' cx='.25' cy='.15' r='1.05'%3E%3Cstop offset='0' stop-color='%2314301F'/%3E%3Cstop offset='.6' stop-color='%230A1B11'/%3E%3Cstop offset='1' stop-color='%2306100A'/%3E%3C/radialGradient%3E%3CclipPath id='k'%3E%3Crect width='512' height='512' rx='112'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url(%23k)'%3E%3Crect width='512' height='512' fill='url(%23bg)'/%3E%3C/g%3E%3Cg transform='translate(256 256) scale(1.12) translate(-256 -256) translate(18 0)' fill='none' stroke-width='56' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M170 120V392' stroke='url(%23hj)'/%3E%3Cpath d='M170 256L306 392' stroke='url(%23hj)'/%3E%3Cpath d='M170 256L306 120' stroke='url(%23emas)'/%3E%3Cpath d='M242 120H306V184' stroke='url(%23emas)'/%3E%3C/g%3E%3C/svg%3E">
 
-  <!-- Font Fraunces (angka & judul) + Manrope (isi). Butuh internet; offline pakai font bawaan -->
+  <!-- Font Inter. Butuh internet; offline pakai font bawaan -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="keuangan.css">
   <!-- ===== HEAD END ===== -->
@@ -52,8 +52,11 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8.5h15a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2zM3.5 8.5l11-4 1.2 4M16.5 14.5h4"/></svg><span>Kekayaan</span></button>
     <button type="button" class="nav-btn" data-aksi="tab" data-tab="goals">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8"/></svg><span>Goals</span></button>
+    <div class="nav-seksi" aria-hidden="true">Akun</div>
     <button type="button" class="nav-btn" data-aksi="tab" data-tab="pengaturan">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9M13 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM7 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"/></svg><span>Atur</span></button>
+    <div class="nav-kosong" aria-hidden="true"></div>
+    <div class="nav-kaki" aria-hidden="true"><b>keuangan <span class="versi-app">v1.3.1</span></b>Data tersimpan di perangkat ini dan jalan tanpa internet.</div>
   </nav>
   <!-- ===== NAVIGASI END ===== -->
 
@@ -66,12 +69,19 @@
          Pemilih bulan hanya muncul di Home, Arus Kas, Transaksi.
          ============================================================ -->
     <header class="app-header">
-      <div class="app-title"><img class="logo" src="icons/icon.svg" alt="" width="32" height="32"><span id="judulHalaman">Home</span></div>
+      <div class="app-title"><img class="logo" src="icons/icon.svg" alt="" width="32" height="32">
+        <div class="app-judul"><span id="judulHalaman">Home</span><small id="subHalaman"></small></div></div>
 
-      <div class="month-nav" id="monthNav">
-        <button type="button" class="icon-btn" data-aksi="bulan-sebelum" aria-label="Bulan sebelumnya">&lsaquo;</button>
-        <button type="button" class="month-label" id="labelBulan" data-aksi="bulan-ini" title="Ketuk untuk ke bulan ini"></button>
-        <button type="button" class="icon-btn" data-aksi="bulan-berikut" aria-label="Bulan berikutnya">&rsaquo;</button>
+      <div class="header-alat">
+        <div class="month-nav" id="monthNav">
+          <button type="button" class="icon-btn" data-aksi="bulan-sebelum" aria-label="Bulan sebelumnya">&lsaquo;</button>
+          <button type="button" class="month-label" id="labelBulan" data-aksi="bulan-ini" title="Ketuk untuk ke bulan ini"></button>
+          <button type="button" class="icon-btn" data-aksi="bulan-berikut" aria-label="Bulan berikutnya">&rsaquo;</button>
+        </div>
+        <button type="button" class="icon-btn btn-tema" data-aksi="ganti-tema" aria-label="Ganti tema terang atau gelap" title="Ganti tema">
+          <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg></button>
+        <button type="button" class="btn btn--solid btn-atas" id="btnTambahAtas" data-aksi="fab">
+          <svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="labelTambahAtas">Transaksi</span></button>
       </div>
     </header>
     <!-- ===== HEADER END ===== -->
@@ -145,7 +155,7 @@
            ============================================================ -->
       <footer class="footer">
         <p>&copy; <span id="tahunCopyright">2026</span> Muh Geris Wiruno Mandawa. Semua hak dilindungi.</p>
-        <p class="footer-kecil">Data tersimpan di perangkat ini saja.</p>
+        <p class="footer-kecil"><span>Data tersimpan di perangkat ini saja.</span><span>Version.<span class="versi-app">1.3.1</span></span></p>
       </footer>
       <!-- ===== FOOTER END ===== -->
 

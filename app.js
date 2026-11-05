@@ -1,5 +1,5 @@
 /* ================================================================
-   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [versi 2]
+   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [aplikasi v1.3.1]
    Tugas file ini: menyimpan "keadaan" aplikasi (bulan, tab aktif),
    memasang semua event (klik, submit), membuka form, lalu memanggil
    Data (storage.js) dan fungsi render (ui.js, halaman.js).
@@ -34,6 +34,15 @@ const state = {
 const JUDUL_HALAMAN = {
   home: "Home", arus: "Arus Kas", transaksi: "Transaksi",
   kekayaan: "Kekayaan", goals: "Goals", pengaturan: "Pengaturan"
+};
+
+const SUB_HALAMAN = {
+  home: "Ringkasan keuanganmu bulan ini",
+  arus: "Income, expenses dan liabilitas: budget lawan realisasi",
+  transaksi: "Catat dan cari uang masuk dan keluar",
+  kekayaan: "Dompet, aset investasi dan utang di satu tempat",
+  goals: "Tabungan dan target keuanganmu",
+  pengaturan: "Tampilan, anggaran, kategori dan data"
 };
 
 /* Halaman yang memakai pemilih bulan */
@@ -74,9 +83,19 @@ function labelFab() {
   return LABEL_FAB[state.tab] || "Tambah";
 }
 
+/* Teks pendek untuk tombol tambah di header (layar lebar) */
+function labelAtas() {
+  if (state.tab === "kekayaan") return state.sub === "aset" ? "Aset" : state.sub === "utang" ? "Utang" : "Dompet";
+  return state.tab === "goals" ? "Goal" : "Transaksi";
+}
+
 function perbaruiFab() {
-  $("#fabTambah").hidden = state.tab === "pengaturan";
+  const sembunyi = state.tab === "pengaturan";
+  $("#fabTambah").hidden = sembunyi;
   $("#fabTambah").setAttribute("aria-label", labelFab());
+  $("#btnTambahAtas").hidden = sembunyi;
+  $("#btnTambahAtas").setAttribute("aria-label", labelFab());
+  $("#labelTambahAtas").textContent = labelAtas();
 }
 
 function pindahTab(nama) {
@@ -90,6 +109,7 @@ function pindahTab(nama) {
   });
 
   $("#judulHalaman").textContent = JUDUL_HALAMAN[nama] || "";
+  $("#subHalaman").textContent = SUB_HALAMAN[nama] || "";
   $("#monthNav").hidden = !TAB_BULAN.includes(nama);
   perbaruiFab();
   window.scrollTo(0, 0);
@@ -659,6 +679,13 @@ function daftarkanSW() {
    Mau menambah tombol baru? Beri data-aksi di HTML, lalu daftarkan
    namanya di sini.
    ================================================================ */
+/* Baca keempat kolom warna kustom di Pengaturan */
+function bacaWarnaKustom() {
+  const nilai = { preset: "kustom" };
+  $$("input[data-warna]").forEach((el) => { nilai[el.dataset.warna] = el.value; });
+  return nilai;
+}
+
 async function simpanPengaturan(p, pesan) {
   await Data.setPengaturan(p);
   if (pesan) toast(pesan);
@@ -720,7 +747,16 @@ const AKSI = {
   "edit-kategori": (el) => formKategori(el.dataset.id),
 
   "set-mode":   (el) => simpanPengaturan({ mode: el.dataset.mode }),
-  "set-preset": (el) => simpanPengaturan({ aksen: el.dataset.hex, preset: el.dataset.preset }),
+  /* Pilih palet siap pakai: aksen, latar, dan cahaya ikut berganti */
+  "set-preset": (el) => {
+    const w = PRESET_WARNA.find((x) => x.id === el.dataset.preset);
+    if (!w) return;
+    return simpanPengaturan({ preset: w.id, aksen: w.hex, latar: w.latar, cahaya1: w.g1, cahaya2: w.g2 }, "palet " + w.nama);
+  },
+  /* Pakai warna kustom yang sedang tampil di kolom warna */
+  "set-kustom": () => simpanPengaturan(bacaWarnaKustom(), "palet kustom dipakai"),
+  /* Tombol bulan di header: bergantian terang <-> gelap */
+  "ganti-tema": () => simpanPengaturan({ mode: modeGelap(state.data.pengaturan.mode) ? "terang" : "gelap" }),
 
   "ekspor-json": () => eksporJSON(),
   "ekspor-csv":  () => eksporCSV(),
@@ -781,15 +817,15 @@ document.addEventListener("input", (e) => {
     state.cari = e.target.value;
     renderTransaksi(state.data, state.bulan, state.filter, state.cari);
   }
-  /* Pilih warna bebas: langsung terlihat, disimpan saat selesai memilih */
-  if (e.target.id === "warnaKustom") {
-    terapkanTema(Object.assign({}, state.data.pengaturan, { aksen: e.target.value }));
+  /* Warna kustom: langsung terlihat, disimpan saat selesai memilih */
+  if (e.target.dataset && e.target.dataset.warna) {
+    terapkanTema(Object.assign({}, state.data.pengaturan, bacaWarnaKustom()));
   }
 });
 
 document.addEventListener("change", (e) => {
-  if (e.target.id === "warnaKustom") {
-    aman(() => simpanPengaturan({ aksen: e.target.value, preset: "kustom" }, "warna tema diubah"));
+  if (e.target.dataset && e.target.dataset.warna) {
+    aman(() => simpanPengaturan(bacaWarnaKustom(), "warna tema diubah"));
   }
 });
 
@@ -825,6 +861,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* Tahun hak cipta otomatis */
     $("#tahunCopyright").textContent = new Date().getFullYear();
+    $$(".versi-app").forEach((el) => { el.textContent = "v" + VERSI_APP; });
 
     await muatUlang();
     pindahTab("home");

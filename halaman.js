@@ -1,5 +1,5 @@
 /* ================================================================
-   HALAMAN.JS - MENGGAMBAR SEMUA HALAMAN  [baru di versi 2]
+   HALAMAN.JS - MENGGAMBAR SEMUA HALAMAN  [aplikasi v1.3.1]
    Tiap fungsi render menerima data (dan bulan / pilihan) lalu
    mengisi HTML ke wadahnya. File ini TIDAK menyimpan data dan
    TIDAK memasang event (itu tugas storage.js dan app.js).
@@ -22,8 +22,10 @@ function kartu(judul, isi, kelas) {
     (judul ? '<h2 class="card-title">' + judul + "</h2>" : "") + isi + "</article>";
 }
 
-function tile(label, nilai, kelasNilai, sub, kelasTile) {
-  return '<div class="stat ' + (kelasTile || "") + '"><span class="stat-label">' + label + "</span>" +
+function tile(label, nilai, kelasNilai, sub, kelasTile, ikonNama) {
+  return '<div class="stat ' + (kelasTile || "") + '">' +
+    (ikonNama ? '<span class="stat-ico">' + ikon(ikonNama) + "</span>" : "") +
+    '<span class="stat-label">' + label + "</span>" +
     '<span class="stat-value ' + (kelasNilai || "") + '">' + nilai + "</span>" +
     (sub ? '<span class="stat-sub">' + sub + "</span>" : "") + "</div>";
 }
@@ -57,7 +59,8 @@ function renderHome(data, bulan) {
   const selisih = t.masuk - t.keluar;
   const sh = kesehatan(data, bulan);
 
-  /* --- Net Worth (kartu utama bergaya uang kertas) --- */
+  /* --- Net Worth (kartu utama bergaya uang kertas + grafik mini) --- */
+  const trenMini = trenNetWorth(data, bulan, 6).map((x) => ({ label: singkatBulan(x.bulan), nilai: x.nilai }));
   const hero =
     '<section class="hero">' +
       '<div class="hero-isi">' +
@@ -66,19 +69,19 @@ function renderHome(data, bulan) {
         '<p class="hero-delta ' + (delta >= 0 ? "is-naik" : "is-turun") + '">' +
           (delta === 0 ? "sama seperti" : (delta > 0 ? "&#9650; " : "&#9660; ") + rupiahTanda(delta) + " dari") +
           " akhir " + esc(namaBulan(bulanLalu)) + "</p>" +
+        '<p class="hero-seri">TOTAL ASSETS &minus; LIABILITIES &middot; ' + esc(bulan.replace("-", " / ")) + "</p>" +
       "</div>" +
-      '<div class="koin" aria-hidden="true"><span>Rp</span></div>' +
-      '<p class="hero-seri">TOTAL ASSETS &minus; LIABILITIES &middot; ' + esc(bulan.replace("-", " / ")) + "</p>" +
+      '<div class="hero-spark">' + sparkSVG(trenMini) + "</div>" +
     "</section>";
 
   /* --- Ringkasan angka --- */
   const ringkas =
     '<div class="stat-grid">' +
-      tile("Total Assets", rupiah(p.totalAset), "", "cash + wallet + investasi", "stat--besar") +
-      tile("Liabilities", rupiah(p.liabilitas), "is-keluar", "sisa utang", "stat--besar") +
-      tile("Cash on Hand", rupiah(p.tunai)) +
-      tile("Digital Wallets &amp; Bank", rupiah(p.digital)) +
-      tile("Investasi", rupiah(p.investasi), "", "saham, kripto, emas, dll") +
+      tile("Total Assets", rupiah(p.totalAset), "", "cash + wallet + investasi", "stat--besar", "bank") +
+      tile("Liabilities", rupiah(p.liabilitas), "is-keluar", "sisa utang", "stat--besar stat--merah", "kartu") +
+      tile("Cash on Hand", rupiah(p.tunai), "", "uang tunai", "stat--emas", "tunai") +
+      tile("Digital Wallets &amp; Bank", rupiah(p.digital), "", "bank + e-wallet", "", "hp") +
+      tile("Investasi", rupiah(p.investasi), "", "saham, kripto, emas, dll", "", "grafik") +
     "</div>";
 
   /* --- Donat: Cash vs Wallets & Bank vs Liabilities --- */
@@ -126,7 +129,7 @@ function renderHome(data, bulan) {
       const st = statusAnggaran("keluar", x.persen);
       return '<div class="row"><span>' + esc(x.kategori.nama) + '</span><strong class="is-' + (st === "over" ? "keluar" : "warn") + '">' +
         x.persen + "% " + (st === "over" ? "lewat" : "hampir") + "</strong></div>";
-    }).join(""));
+    }).join(""), "card--merah");
 
   /* --- Goals (ringkas) --- */
   const goalAktif = data.goals.map((g) => ({ g: g, i: infoGoal(g) })).filter((x) => !x.i.selesai)
@@ -138,7 +141,7 @@ function renderHome(data, bulan) {
       : goalAktif.map((x) =>
           '<div class="goal-mini"><div class="row row--rapat"><span>' + esc(x.g.nama) + "</span><strong>" + x.i.persen + "%</strong></div>" +
           meterHTML(x.i.persen, "ok") + "</div>").join("") +
-        '<button type="button" class="mini-btn" data-aksi="tab" data-tab="goals">semua goals</button>');
+        '<button type="button" class="mini-btn" data-aksi="tab" data-tab="goals">semua goals</button>', "card--emas");
 
   $("#isi-home").innerHTML = hero + ringkas +
     '<div class="grid">' + donatA + donatB + kartuTren + kartuSehat + kartuPerhatian + kartuGoal + "</div>";
@@ -378,7 +381,7 @@ function htmlUtang(data) {
   const ringkas = kartu("Total liabilitas",
     barisInfo("Sisa utang", rupiah(p.liabilitas), "is-keluar") +
     barisInfo("Total pokok", rupiah(pokok)) +
-    barisInfo("Sudah dibayar", rupiah(terbayar) + " (" + persenDari(terbayar, pokok) + "%)", "is-masuk"));
+    barisInfo("Sudah dibayar", rupiah(terbayar) + " (" + persenDari(terbayar, pokok) + "%)", "is-masuk"), "card--merah");
 
   const donat = kartu("Liabilitas per kategori",
     donutSVG(irisan, { tengah: rupiahRingkas(p.liabilitas), sub: "sisa", judul: "sisa utang per kategori" }) + legendaHTML(irisan));
@@ -476,16 +479,29 @@ function renderPengaturan(data, terbuka, pasang) {
   const p = data.pengaturan;
   pasang = pasang || { terpasang: true };
 
-  /* --- Tampilan --- */
+  /* --- Tampilan: mode, palet warna, warna kustom --- */
   const mode = chipsHTML([["auto", "otomatis"], ["terang", "terang"], ["gelap", "gelap"]], p.mode, "set-mode", "mode");
-  const swatch = PRESET_WARNA.map((w) =>
-    '<button type="button" class="swatch' + (p.aksen.toLowerCase() === w.hex.toLowerCase() ? " is-active" : "") + '" style="--sw:' + w.hex +
-    '" data-aksi="set-preset" data-preset="' + w.id + '" data-hex="' + w.hex + '" aria-label="Warna ' + w.nama + '" title="' + w.nama + '"></button>'
-  ).join("");
+  const gaya = (a, b, c, d) => "--pa:" + a + ";--pb:" + b + ";--pc:" + c + ";--pd:" + d;
+  const paletHTML = PRESET_WARNA.map((w) =>
+    '<button type="button" class="palet' + (p.preset === w.id ? " is-active" : "") + '" style="' + gaya(w.hex, w.g1, w.g2, w.latar) +
+    '" data-aksi="set-preset" data-preset="' + w.id + '" aria-pressed="' + (p.preset === w.id) + '" aria-label="Palet ' + w.nama + '">' +
+    '<span class="palet-titik"><i style="background:' + w.hex + '"></i><i style="background:' + w.g1 + '"></i><i style="background:' + w.g2 + '"></i></span>' +
+    "<span>" + w.nama + (p.preset === w.id ? " &#10003;" : "") + "</span></button>"
+  ).join("") +
+    '<button type="button" class="palet palet--kustom' + (p.preset === "kustom" ? " is-active" : "") + '" style="' + gaya(p.aksen, p.cahaya1, p.cahaya2, p.latar) +
+    '" data-aksi="set-kustom" aria-pressed="' + (p.preset === "kustom") + '" aria-label="Palet kustom">' +
+    '<span class="palet-titik"><i style="background:' + p.aksen + '"></i><i style="background:' + p.cahaya1 + '"></i><i style="background:' + p.cahaya2 + '"></i></span>' +
+    "<span>Kustom" + (p.preset === "kustom" ? " &#10003;" : "") + "</span></button>";
+  const warnaInput = (kunci, label, nilai) =>
+    '<div class="kustom-item"><label for="w_' + kunci + '">' + label + '</label>' +
+    '<input type="color" id="w_' + kunci + '" data-warna="' + kunci + '" value="' + esc(nilai) + '"></div>';
   const tampilan = kartu("Tampilan",
     '<p class="sub-head sub-head--atas">mode</p>' + mode +
-    '<p class="sub-head">warna tema</p><div class="swatch-baris">' + swatch +
-    '<label class="swatch swatch--kustom" title="Warna bebas"><input type="color" id="warnaKustom" value="' + esc(p.aksen) + '" aria-label="Pilih warna bebas"><span>+</span></label></div>');
+    '<p class="sub-head">palet warna</p><div class="palet-grid">' + paletHTML + "</div>" +
+    '<p class="sub-head">warna kustom</p>' +
+    '<p class="hint">Pilih warnamu sendiri. Tampilan langsung berubah dan otomatis jadi palet Kustom. Warna teks di tombol menyesuaikan supaya tetap terbaca.</p>' +
+    '<div class="kustom-grid">' + warnaInput("aksen", "Aksen", p.aksen) + warnaInput("latar", "Latar (mode gelap)", p.latar) +
+    warnaInput("cahaya1", "Cahaya sudut 1", p.cahaya1) + warnaInput("cahaya2", "Cahaya sudut 2", p.cahaya2) + "</div>");
 
   /* --- Anggaran & kategori --- */
   const grup = (tipe, judul, adaBudget) => {
@@ -526,6 +542,12 @@ function renderPengaturan(data, terbuka, pasang) {
       '<button type="button" class="btn" data-aksi="ekspor-csv">ekspor CSV</button>' +
       '<button type="button" class="btn btn--danger" data-aksi="reset-data">reset semua</button></div>');
 
+  /* --- Tentang --- */
+  const tentang = kartu("Tentang aplikasi",
+    barisInfo("Versi", "v" + VERSI_APP) +
+    barisInfo("Penyimpanan", "di perangkat ini") +
+    barisInfo("Pembuat", "Muh Geris Wiruno Mandawa"), "card--polos");
+
   /* --- Pasang aplikasi (disembunyikan kalau sudah terpasang) --- */
   let kartuPasang = "";
   if (!pasang.terpasang) {
@@ -542,6 +564,6 @@ function renderPengaturan(data, terbuka, pasang) {
       petunjuk);
   }
 
-  $("#isi-pengaturan").innerHTML = '<div class="grid">' + tampilan + cadangan + kartuPasang + "</div>" + anggaranKartu;
+  $("#isi-pengaturan").innerHTML = '<div class="grid">' + tampilan + cadangan + kartuPasang + tentang + "</div>" + anggaranKartu;
 }
 /* ===== PENGATURAN END ===== */
