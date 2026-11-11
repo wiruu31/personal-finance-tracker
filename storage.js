@@ -61,7 +61,7 @@ const KATEGORI_AWAL = {
   keluar: [
     "Rent", "Utilities", "Food", "Transportation", "School / Education",
     "Health & Insurance", "Debt / Installments", "Shopping", "Subscriptions",
-    "Hobbies & Recreation", "Social & Charity", "Invest & Savings", "Other Expense"
+    "Hobbies & Recreation", "Lifestyle & Entertainment", "Social & Charity", "Invest & Savings", "Other Expense"
   ],
   utang: [],   /* kategori liabilitas ditambah sendiri lewat Pengaturan */
   aset: [
