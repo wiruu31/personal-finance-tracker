@@ -1,5 +1,5 @@
 /* ================================================================
-   HALAMAN.JS - MENGGAMBAR SEMUA HALAMAN  [aplikasi v1.4.1]
+   HALAMAN.JS - MENGGAMBAR SEMUA HALAMAN  [aplikasi v1.4.2]
    Tiap fungsi render menerima data (dan bulan / pilihan) lalu
    mengisi HTML ke wadahnya. File ini TIDAK menyimpan data dan
    TIDAK memasang event (itu tugas storage.js dan app.js).
@@ -471,6 +471,9 @@ function renderGoals(data) {
 /* ===== GOALS END ===== */
 
 
+/* Nama file APK (satu folder dengan keuangan.html). Dipakai tombol "pasang sekarang" di Android */
+const FILE_APK = "personal-finance.apk";
+
 /* ===== PENGATURAN START =====
    Tampilan (mode & warna), anggaran + kategori, cadangan data.
    terbuka = { masuk: true, ... } grup mana yang sedang dibuka.
@@ -551,7 +554,13 @@ function renderPengaturan(data, terbuka, pasang) {
   /* --- Pasang aplikasi (disembunyikan kalau sudah terpasang) --- */
   let kartuPasang = "";
   if (!pasang.terpasang) {
-    const petunjuk = pasang.bisa
+    const petunjuk = pasang.android
+      ? '<a class="btn btn--solid" href="' + FILE_APK + '" download="' + FILE_APK + '">pasang sekarang</a>' +
+        '<p class="hint hint--atas">Tombol ini mengunduh file APK. Setelah selesai, buka file-nya untuk memasang. ' +
+        "Kalau Android menanyakan izin <strong>pasang dari sumber ini</strong>, izinkan.</p>" +
+        '<p class="hint">Catatan: data di aplikasi APK terpisah dari data di browser. Kalau sudah punya data di sini, ' +
+        "ekspor JSON dulu lalu impor di aplikasinya.</p>"
+      : pasang.bisa
       ? '<button type="button" class="btn btn--solid" data-aksi="pasang-app">pasang sekarang</button>'
       : pasang.ios
         ? '<p class="hint">Buka halaman ini di <strong>Safari</strong>, ketuk tombol <strong>Bagikan</strong>, lalu pilih <strong>Tambah ke Layar Utama</strong>.</p>' +

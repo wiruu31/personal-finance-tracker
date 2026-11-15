@@ -1,5 +1,5 @@
 /* ================================================================
-   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [aplikasi v1.4.1]
+   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [aplikasi v1.4.2]
    Tugas file ini: menyimpan "keadaan" aplikasi (bulan, tab aktif),
    memasang semua event (klik, submit), membuka form, lalu memanggil
    Data (storage.js) dan fungsi render (ui.js, halaman.js).
@@ -633,7 +633,10 @@ async function resetData() {
    ================================================================ */
 function sudahTerpasang() {
   try {
-    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+    const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+    /* Di dalam aplikasi APK (Android WebView) tidak perlu menawarkan unduhan lagi */
+    const webview = /; wv\)|gonative|median/i.test(navigator.userAgent || "");
+    return standalone || webview;
   } catch (e) { return false; }
 }
 
@@ -641,7 +644,7 @@ function sudahTerpasang() {
 function infoPasang() {
   const ua = navigator.userAgent || "";
   const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  return { terpasang: sudahTerpasang(), bisa: Boolean(state.promptPasang), ios: ios };
+  return { terpasang: sudahTerpasang(), bisa: Boolean(state.promptPasang), ios: ios, android: /android/i.test(ua) };
 }
 
 /* Browser menawarkan pemasangan: simpan, tampilkan tombol di Pengaturan */

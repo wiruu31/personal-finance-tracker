@@ -2,7 +2,7 @@
 
 Catatan keuangan pribadi yang jalan di browser: net worth, dompet, aset, utang, budget, goals. Bisa dipasang seperti aplikasi (PWA) dan jalan tanpa internet. Data tersimpan di perangkat, tidak dikirim ke mana pun.
 
-**Versi: 1.4.1** (banyak akun, kategori baru Lifestyle & Entertainment)
+**Versi: 1.4.2** (banyak akun, kategori Lifestyle & Entertainment, unduh APK)
 
 ## Fitur v1.4.0: banyak akun
 
@@ -32,6 +32,7 @@ Semua file ada dalam satu folder (folder `icons/` tetap seperti sebelumnya).
 | `akun.js` | **Baru.** Daftar akun, pindah, tambah, ubah nama, hapus, tema global |
 | `sw.js` | Service worker (offline) |
 | `manifest.webmanifest` | Pengaturan PWA |
+| `personal-finance.apk` | File APK yang diunduh tombol "pasang sekarang" (taruh di folder yang sama; nama file harus persis ini) |
 
 Urutan script di `keuangan.html` wajib: `storage.js`, `ui.js`, `halaman.js`, `app.js`, `akun.js`.
 
@@ -39,7 +40,15 @@ Urutan script di `keuangan.html` wajib: `storage.js`, `ui.js`, `halaman.js`, `ap
 
 1. Salin semua file ke repo. Timpa file lama dan tambahkan `akun.js` dan `akun.css`.
 2. Pastikan folder `icons/` tetap ada.
-3. Buka situsnya dan muat ulang. Kalau tampilan masih lama, tutup lalu buka lagi aplikasinya sekali supaya service worker memperbarui cache (versi cache sudah naik ke `keuangan-v1.4.1`).
+3. Buka situsnya dan muat ulang. Kalau tampilan masih lama, tutup lalu buka lagi aplikasinya sekali supaya service worker memperbarui cache (versi cache sudah naik ke `keuangan-v1.4.2`).
+
+## Tombol "pasang sekarang" (APK)
+
+- Di Android, Pengaturan > Pasang aplikasi > **pasang sekarang** mengunduh `personal-finance.apk` dari folder yang sama dengan `keuangan.html`.
+- Setelah terunduh, buka file-nya untuk memasang. Android bisa meminta izin "pasang dari sumber ini".
+- Data aplikasi APK terpisah dari data di browser. Pindahkan lewat ekspor JSON lalu impor.
+- Di iPhone/iPad petunjuk Safari tetap tampil. Di komputer, tombol pasang PWA bawaan Chrome tetap dipakai.
+- Kalau mengganti APK, timpa file dengan nama yang sama. Nama lain perlu diubah di `FILE_APK` (`halaman.js`).
 
 ## Penyimpanan di browser
 
@@ -54,6 +63,7 @@ Data hanya ada di browser perangkat ini. Kalau data browser dibersihkan atau gan
 
 ## Riwayat versi
 
+- **1.4.2**: tombol **pasang sekarang** di Pengaturan (Android) mengunduh file `personal-finance.apk`. Tombol disembunyikan di dalam aplikasi APK. Service worker tidak menyimpan file APK di cache.
 - **1.4.1**: kategori Expenses baru **Lifestyle & Entertainment** (otomatis ditambahkan sekali ke akun yang sudah ada, dan ada di daftar awal akun baru; kalau dihapus tidak muncul lagi). Perbaikan tombol akun di HP yang tampil lonjong, kini bulat.
 - **1.4.0**: banyak akun dengan data terpisah, nama akun bisa diganti, tema global.
 - **1.3.1**: versi sebelumnya.
