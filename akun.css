@@ -1,0 +1,104 @@
+/* ================================================================
+   AKUN.CSS - TOMBOL & DIALOG AKUN  [versi 1.4.1]
+   Hanya gaya untuk fitur banyak akun. Memakai variabel warna dari
+   keuangan.css (--aksen, --panel, dll), jadi ikut tema yang dipilih.
+   Dimuat setelah keuangan.css.
+
+   Daftar bagian:
+   TOMBOL AKUN | DIALOG AKUN | LAYAR LEBAR
+   ================================================================ */
+
+
+/* ===== TOMBOL AKUN START =====
+   Di HP: hanya lingkaran huruf awal, menggantikan logo kecil di header
+   (supaya lebar header sama seperti sebelumnya). Layar >= 600px:
+   logo tampil lagi dan nama akun ikut tampil.
+   ================================================================ */
+.akun-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  min-height: 32px;
+  padding: 1px;
+  border: 1px solid var(--border-kuat);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: border-color .2s, background .2s;
+}
+.akun-btn:hover, .akun-btn:active { border-color: var(--aksen); background: var(--aksen-lembut); }
+
+.akun-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--aksen);
+  color: var(--aksen-teks);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+.akun-nama, .akun-panah { display: none; }
+
+/* Di HP logo kecil diganti lingkaran akun */
+.app-header .logo { display: none; }
+/* ===== TOMBOL AKUN END ===== */
+
+
+/* ===== DIALOG AKUN START ===== */
+.akun-isi { padding: 20px 18px calc(22px + var(--aman-bawah)); }
+.akun-isi .hint { margin-bottom: 12px; }
+.akun-daftar { display: grid; gap: 8px; margin-bottom: 14px; }
+
+.akun-baris {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel-2);
+}
+.akun-baris.is-aktif { border-color: var(--aksen-garis); background: var(--aksen-lembut); }
+
+.akun-pilih {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: 4px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  text-align: left;
+}
+.akun-pilih .akun-avatar { width: 36px; height: 36px; font-size: 15px; }
+.akun-info { display: flex; flex-direction: column; min-width: 0; }
+.akun-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.akun-centang { margin-left: auto; padding-right: 4px; font-weight: 800; color: var(--aktx); }
+/* ===== DIALOG AKUN END ===== */
+
+
+/* ===== LAYAR LEBAR START =====
+   >= 600px: logo kembali tampil, tombol akun menampilkan nama.
+   >= 960px: logo header memang disembunyikan keuangan.css (ada di menu samping).
+   ================================================================ */
+@media (min-width: 600px) {
+  .app-header .logo { display: block; }
+  .akun-btn { padding: 1px 12px 1px 1px; }
+  .akun-nama { display: block; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .akun-panah { display: block; width: 16px; height: 16px; color: var(--muted); }
+}
+
+@media (min-width: 960px) {
+  .app-header .logo:not(.logo--menu) { display: none; }
+}
+/* ===== LAYAR LEBAR END ===== */
