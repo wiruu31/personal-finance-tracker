@@ -13,7 +13,7 @@
    INTI di bawah. Ganti VERSI kalau mau memaksa cache dibuang.
    ================================================================ */
 
-const VERSI = "keuangan-v1.4.2";
+const VERSI = "keuangan-v1.4.6";
 
 const INTI = [
   "./",
@@ -97,8 +97,6 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
-  /* File APK besar: biarkan browser mengunduh langsung, jangan disimpan di cache */
-  if (url.origin === self.location.origin && /\.apk$/i.test(url.pathname)) return;
   if (url.origin === self.location.origin) {
     e.respondWith(internetDulu(req));
   } else if (HOST_FONT.indexOf(url.hostname) >= 0) {

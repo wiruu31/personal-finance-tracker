@@ -1,5 +1,5 @@
 /* ================================================================
-   HALAMAN.JS - MENGGAMBAR SEMUA HALAMAN  [aplikasi v1.4.2]
+   HALAMAN.JS - MENGGAMBAR SEMUA HALAMAN  [aplikasi v1.4.6]
    Tiap fungsi render menerima data (dan bulan / pilihan) lalu
    mengisi HTML ke wadahnya. File ini TIDAK menyimpan data dan
    TIDAK memasang event (itu tugas storage.js dan app.js).
@@ -77,11 +77,12 @@ function renderHome(data, bulan) {
   /* --- Ringkasan angka --- */
   const ringkas =
     '<div class="stat-grid">' +
-      tile("Total Assets", rupiah(p.totalAset), "", "cash + wallet + investasi", "stat--besar", "bank") +
+      tile("Total Assets", rupiah(p.totalAset), "", "cash + wallet + investasi + goals", "stat--besar", "bank") +
       tile("Liabilities", rupiah(p.liabilitas), "is-keluar", "sisa utang", "stat--besar stat--merah", "kartu") +
       tile("Cash on Hand", rupiah(p.tunai), "", "uang tunai", "stat--emas", "tunai") +
       tile("Digital Wallets &amp; Bank", rupiah(p.digital), "", "bank + e-wallet", "", "hp") +
       tile("Investasi", rupiah(p.investasi), "", "saham, kripto, emas, dll", "", "grafik") +
+      tile("Dana Goals", rupiah(p.goal), "", "sudah disetor ke goal", "", "goal") +
     "</div>";
 
   /* --- Donat: Cash vs Wallets & Bank vs Liabilities --- */
@@ -114,12 +115,12 @@ function renderHome(data, bulan) {
     '<div class="metrik"><div class="metrik-atas"><span>' + label + '</span><strong class="' + (kelas || "") + '">' + nilai + "</strong></div>" +
     '<small class="muted">' + ket + "</small></div>";
   const kartuSehat = kartu("Kesehatan keuangan",
-    metrik("Savings rate", pct(sh.rasioTabung), "(income &minus; expenses) &divide; income bulan ini",
+    metrik("Savings rate", pct(sh.rasioTabung), "(income &minus; expenses di luar Invest &amp; Savings) &divide; income bulan ini",
            sh.rasioTabung === null ? "" : sh.rasioTabung >= 0.2 ? "is-masuk" : sh.rasioTabung >= 0 ? "is-warn" : "is-keluar") +
     metrik("Debt to assets", pct(sh.rasioUtang), "liabilities &divide; total assets",
            sh.rasioUtang === null ? "" : sh.rasioUtang <= 0.3 ? "is-masuk" : sh.rasioUtang <= 0.5 ? "is-warn" : "is-keluar") +
     metrik("Dana darurat", sh.danaDarurat === null ? "-" : new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(sh.danaDarurat) + " bulan",
-           "cash + wallet &amp; bank &divide; rata-rata expenses 3 bulan",
+           "cash + wallet &amp; bank &divide; rata-rata expenses 3 bulan (tanpa Invest &amp; Savings)",
            sh.danaDarurat === null ? "" : sh.danaDarurat >= 6 ? "is-masuk" : sh.danaDarurat >= 3 ? "is-warn" : "is-keluar"));
 
   /* --- Perhatian: budget expenses yang hampir / sudah lewat --- */
@@ -264,7 +265,8 @@ function renderTransaksi(data, bulan, filterTipe, cari) {
     }
 
     const utang = t.utangId ? data.utang.find((u) => u.id === t.utangId) : null;
-    const sub = (utang ? "bayar " + esc(utang.nama) + " &middot; " : catatan) + esc(namaDompet(data, t.dompetId));
+    const taut = tertaut(data, t.id);
+    const sub = (utang ? "bayar " + esc(utang.nama) + " &middot; " : taut ? "ke " + taut.jenis + " " + esc(taut.nama) + " &middot; " + catatan : catatan) + esc(namaDompet(data, t.dompetId));
     html +=
       '<button type="button" class="trx" data-aksi="edit-transaksi" data-id="' + esc(t.id) + '">' +
         '<span class="trx-ico trx-ico--' + t.tipe + '" aria-hidden="true">' + (t.tipe === "masuk" ? "&#8595;" : "&#8593;") + "</span>" +
@@ -425,6 +427,7 @@ function renderGoals(data) {
   const tercapai = infos.filter((x) => x.i.selesai).length;
 
   const ringkas = kartu("Ringkasan goals",
+    barisInfo("Masuk Total Assets", rupiah(posisi(data, "9999-12-31").goal)) +
     barisInfo("Jumlah goal", data.goals.length + (tercapai ? " (" + tercapai + " tercapai)" : "")) +
     barisInfo("Total target", rupiah(totalTarget)) +
     barisInfo("Terkumpul", rupiah(totalKumpul) + " (" + persenDari(totalKumpul, totalTarget) + "%)", "is-masuk"));
@@ -470,9 +473,6 @@ function renderGoals(data) {
 }
 /* ===== GOALS END ===== */
 
-
-/* Nama file APK (satu folder dengan keuangan.html). Dipakai tombol "pasang sekarang" di Android */
-const FILE_APK = "personal-finance.apk";
 
 /* ===== PENGATURAN START =====
    Tampilan (mode & warna), anggaran + kategori, cadangan data.
@@ -554,13 +554,7 @@ function renderPengaturan(data, terbuka, pasang) {
   /* --- Pasang aplikasi (disembunyikan kalau sudah terpasang) --- */
   let kartuPasang = "";
   if (!pasang.terpasang) {
-    const petunjuk = pasang.android
-      ? '<a class="btn btn--solid" href="' + FILE_APK + '" download="' + FILE_APK + '">pasang sekarang</a>' +
-        '<p class="hint hint--atas">Tombol ini mengunduh file APK. Setelah selesai, buka file-nya untuk memasang. ' +
-        "Kalau Android menanyakan izin <strong>pasang dari sumber ini</strong>, izinkan.</p>" +
-        '<p class="hint">Catatan: data di aplikasi APK terpisah dari data di browser. Kalau sudah punya data di sini, ' +
-        "ekspor JSON dulu lalu impor di aplikasinya.</p>"
-      : pasang.bisa
+    const petunjuk = pasang.bisa
       ? '<button type="button" class="btn btn--solid" data-aksi="pasang-app">pasang sekarang</button>'
       : pasang.ios
         ? '<p class="hint">Buka halaman ini di <strong>Safari</strong>, ketuk tombol <strong>Bagikan</strong>, lalu pilih <strong>Tambah ke Layar Utama</strong>.</p>' +
@@ -576,3 +570,4 @@ function renderPengaturan(data, terbuka, pasang) {
   $("#isi-pengaturan").innerHTML = '<div class="grid">' + tampilan + cadangan + kartuPasang + tentang + "</div>" + anggaranKartu;
 }
 /* ===== PENGATURAN END ===== */
+ 

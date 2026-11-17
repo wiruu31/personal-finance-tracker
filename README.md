@@ -2,7 +2,7 @@
 
 Catatan keuangan pribadi yang jalan di browser: net worth, dompet, aset, utang, budget, goals. Bisa dipasang seperti aplikasi (PWA) dan jalan tanpa internet. Data tersimpan di perangkat, tidak dikirim ke mana pun.
 
-**Versi: 1.4.2** (banyak akun, kategori Lifestyle & Entertainment, unduh APK)
+**Versi: 1.4.6** (Invest & Savings wajib punya tujuan)
 
 ## Fitur v1.4.0: banyak akun
 
@@ -32,7 +32,6 @@ Semua file ada dalam satu folder (folder `icons/` tetap seperti sebelumnya).
 | `akun.js` | **Baru.** Daftar akun, pindah, tambah, ubah nama, hapus, tema global |
 | `sw.js` | Service worker (offline) |
 | `manifest.webmanifest` | Pengaturan PWA |
-| `personal-finance.apk` | File APK yang diunduh tombol "pasang sekarang" (taruh di folder yang sama; nama file harus persis ini) |
 
 Urutan script di `keuangan.html` wajib: `storage.js`, `ui.js`, `halaman.js`, `app.js`, `akun.js`.
 
@@ -40,15 +39,13 @@ Urutan script di `keuangan.html` wajib: `storage.js`, `ui.js`, `halaman.js`, `ap
 
 1. Salin semua file ke repo. Timpa file lama dan tambahkan `akun.js` dan `akun.css`.
 2. Pastikan folder `icons/` tetap ada.
-3. Buka situsnya dan muat ulang. Kalau tampilan masih lama, tutup lalu buka lagi aplikasinya sekali supaya service worker memperbarui cache (versi cache sudah naik ke `keuangan-v1.4.2`).
+3. Buka situsnya dan muat ulang. Kalau tampilan masih lama, tutup lalu buka lagi aplikasinya sekali supaya service worker memperbarui cache (versi cache sudah naik ke `keuangan-v1.4.6`).
 
-## Tombol "pasang sekarang" (APK)
+## Tombol "pasang sekarang" (PWA)
 
-- Di Android, Pengaturan > Pasang aplikasi > **pasang sekarang** mengunduh `personal-finance.apk` dari folder yang sama dengan `keuangan.html`.
-- Setelah terunduh, buka file-nya untuk memasang. Android bisa meminta izin "pasang dari sumber ini".
-- Data aplikasi APK terpisah dari data di browser. Pindahkan lewat ekspor JSON lalu impor.
-- Di iPhone/iPad petunjuk Safari tetap tampil. Di komputer, tombol pasang PWA bawaan Chrome tetap dipakai.
-- Kalau mengganti APK, timpa file dengan nama yang sama. Nama lain perlu diubah di `FILE_APK` (`halaman.js`).
+- Di Pengaturan > Pasang aplikasi, tombol **pasang sekarang** memasang aplikasi sebagai PWA lewat browser (Chrome Android, Chrome/Edge di komputer). Setelah terpasang, aplikasi jalan offline lewat service worker.
+- Kalau tombol tidak muncul, petunjuk manual tampil: menu Chrome > **Instal aplikasi** (Android), **Tambah ke Layar Utama** di Safari (iPhone/iPad).
+- Tidak ada lagi file APK. Kalau kamu sudah memasang APK lama, datanya terpisah dari PWA: ekspor JSON dari APK lalu impor di PWA.
 
 ## Penyimpanan di browser
 
@@ -63,6 +60,10 @@ Data hanya ada di browser perangkat ini. Kalau data browser dibersihkan atau gan
 
 ## Riwayat versi
 
+- **1.4.6**: transaksi kategori **Invest & Savings** lewat form Transaksi kini punya kolom wajib **masuk ke** (pilih Goal atau Aset). Goal: jadi setoran goal dan masuk Dana Goals. Aset: modal dan nilai aset bertambah sebesar jumlahnya. Net worth tidak lagi turun saat menabung. Transaksi yang tertaut dikunci (hanya bisa dihapus; menghapus otomatis mengurangi dana goal / modal aset). Transaksi Invest & Savings lama yang belum tertaut bisa ditautkan dengan mengetuknya lalu memilih tujuan. Daftar transaksi menampilkan "ke goal / aset ...". Cache service worker naik ke `keuangan-v1.4.6`.
+- **1.4.5**: tombol **pasang sekarang** kembali memasang PWA (bisa offline), tidak lagi mengunduh file APK. Kode dan keterangan APK dihapus (`FILE_APK`, deteksi WebView, aturan APK di service worker, gaya `a.btn`).
+- **1.4.4**: uang di goal kini masuk **Total Assets** sebagai **Dana Goals**, jadi net worth tidak turun lagi saat menabung ke goal. Form tambah dana goal **wajib memilih dompet** (opsi "tidak dicatat sebagai pengeluaran" dihapus). Setoran mengurangi saldo dompet (pengeluaran Invest & Savings) lalu nilainya ditambahkan lagi lewat Dana Goals. Yang dihitung adalah transaksi yang tertaut ke setoran. Form **aset baru** juga **wajib memilih dompet** (opsi "tidak dicatat sebagai pengeluaran" dihapus), supaya net worth tidak naik tanpa sebab. **Saldo awal goal** dan **setoran lama tanpa dompet** tidak dihitung karena uangnya masih ada di dompet. Menghapus goal = uangnya dianggap terpakai (keluar dari Total Assets); menghapus satu setoran mengembalikan uang ke dompet. Grafik tren net worth ikut memakai Dana Goals per tanggal. Kartu baru "Dana Goals" di Home dan baris "Masuk Total Assets" di Goals.
+- **1.4.3**: perbaikan rumus **Kesehatan keuangan** di Home. Pengeluaran ke kategori **Invest & Savings** (termasuk setoran goal dan beli aset yang dipotong dari dompet) tidak lagi dihitung sebagai pengeluaran di **Savings rate** dan **Dana darurat**, karena uangnya masuk tabungan / investasi. Savings rate = (income - expenses di luar Invest & Savings) / income. Dana darurat = kas / rata-rata expenses 3 bulan (tanpa Invest & Savings). Kategori dikenali dari nama yang mengandung "invest", "saving", atau "tabung". Tidak ada perubahan data; cache service worker naik ke `keuangan-v1.4.3`.
 - **1.4.2**: tombol **pasang sekarang** di Pengaturan (Android) mengunduh file `personal-finance.apk`. Tombol disembunyikan di dalam aplikasi APK. Service worker tidak menyimpan file APK di cache.
 - **1.4.1**: kategori Expenses baru **Lifestyle & Entertainment** (otomatis ditambahkan sekali ke akun yang sudah ada, dan ada di daftar awal akun baru; kalau dihapus tidak muncul lagi). Perbaikan tombol akun di HP yang tampil lonjong, kini bulat.
 - **1.4.0**: banyak akun dengan data terpisah, nama akun bisa diganti, tema global.

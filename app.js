@@ -1,5 +1,5 @@
 /* ================================================================
-   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [aplikasi v1.4.2]
+   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [aplikasi v1.4.6]
    Tugas file ini: menyimpan "keadaan" aplikasi (bulan, tab aktif),
    memasang semua event (klik, submit), membuka form, lalu memanggil
    Data (storage.js) dan fungsi render (ui.js, halaman.js).
@@ -156,6 +156,32 @@ function isiKategori(tipe, pilih) {
     .map((k) => '<option value="' + esc(k.id) + '">' + esc(k.nama) + "</option>")
     .join("");
   if (pilih) sel.value = pilih;
+  perbaruiTujuan();
+}
+
+/* Kolom "masuk ke" hanya tampil untuk kategori Invest & Savings:
+   isinya daftar goal dan aset. Transaksi lama yang belum tertaut boleh
+   ditautkan lewat sini saat diubah. */
+function perbaruiTujuan() {
+  const data = state.data;
+  const kat = data.kategori.find((k) => k.id === $("#fKategori").value);
+  const tampil = Boolean(kat) && kat.tipe === "keluar" && POLA_TABUNG.test(kat.nama) && !state.utangId;
+  $("#fieldTujuan").hidden = !tampil;
+  if (!tampil) return;
+
+  const t = state.editId ? data.transaksi.find((x) => x.id === state.editId) : null;
+  const taut = t ? tertaut(data, t.id) : null;
+  const sel = $("#fTujuan");
+  const dulu = sel.value;
+  const opsi = [];
+  if (t && !taut) opsi.push(["", "(belum ditautkan)"]);
+  data.goals.forEach((g) => opsi.push(["goal:" + g.id, "Goal: " + g.nama]));
+  data.aset.forEach((a) => opsi.push(["aset:" + a.id, "Aset: " + a.nama]));
+  if (opsi.length === 0) opsi.push(["", "belum ada goal atau aset"]);
+
+  sel.innerHTML = opsi.map((o) => '<option value="' + esc(o[0]) + '">' + esc(o[1]) + "</option>").join("");
+  sel.value = taut ? taut.jenis + ":" + taut.id : dulu;
+  if (sel.selectedIndex < 0) sel.selectedIndex = 0;
 }
 
 function isiDompet(pilih) {
@@ -188,12 +214,17 @@ function bukaForm(id, opsi) {
   form.elements.tipe.value = tipe;
   $("#segTipe").hidden = Boolean(utang);
 
+  const taut = t ? tertaut(data, t.id) : null;
   const info = $("#infoUtang");
-  info.hidden = !utang;
+  info.hidden = !utang && !taut;
   if (utang) {
     const sisa = Math.max(0, utang.pokok - terbayarUtang(data, utang.id) + (t ? t.jumlah : 0));
     info.textContent = utang.nama + " (" + namaKategori(data, utang.kategoriId) + ") - sisa " + rupiah(sisa);
+  } else if (taut) {
+    info.textContent = "Transaksi ini tertaut ke " + taut.jenis + " " + taut.nama + ". Tidak bisa diubah; hapus lalu catat ulang kalau salah " +
+      "(menghapus otomatis mengurangi " + (taut.jenis === "goal" ? "dana goal" : "modal aset") + " itu).";
   }
+  $("#fTujuan").innerHTML = "";
 
   let kategoriPilih = t ? t.kategoriId : "";
   if (utang && !t) {
@@ -201,7 +232,6 @@ function bukaForm(id, opsi) {
     kategoriPilih = cocok ? cocok.id : "";
   }
   isiKategori(tipe, kategoriPilih);
-  $("#fKategori").disabled = Boolean(t && t.utangId);   // kategori pembayaran utang dikunci
   isiDompet(t ? t.dompetId : state.dompetTerakhir);
 
   $("#fJumlah").value = t ? String(t.jumlah) : "";
@@ -209,6 +239,12 @@ function bukaForm(id, opsi) {
   $("#fCatatan").value = t ? t.catatan : "";
   $("#btnHapusTransaksi").hidden = !t;
   perbaruiPreview();
+
+  /* Transaksi tertaut: semua kolom dikunci, hanya boleh dihapus. Kategori
+     pembayaran utang juga selalu dikunci. */
+  form.querySelectorAll("input, select").forEach((el) => { el.disabled = Boolean(taut); });
+  $("#fKategori").disabled = Boolean(taut || (t && t.utangId));
+  $("#btnSimpanTransaksi").hidden = Boolean(taut);
 
   bukaDialog($("#dialogTransaksi"));
 }
@@ -222,6 +258,7 @@ async function simpanTransaksi() {
     catatan: $("#fCatatan").value
   };
   if (state.utangId) t.utangId = state.utangId;
+  if (!$("#fieldTujuan").hidden) t.tujuan = $("#fTujuan").value;
 
   if (state.editId) await Data.ubahTransaksi(state.editId, t);
   else await Data.tambahTransaksi(t);
@@ -235,7 +272,9 @@ async function simpanTransaksi() {
 
 async function hapusTransaksiAktif() {
   if (!state.editId) return;
-  if (!confirm("Hapus transaksi ini?")) return;
+  const taut = tertaut(state.data, state.editId);
+  const tanya = taut ? "Hapus transaksi ini? " + (taut.jenis === "goal" ? "Dana di goal " : "Modal di aset ") + taut.nama + " ikut dikurangi." : "Hapus transaksi ini?";
+  if (!confirm(tanya)) return;
   await Data.hapusTransaksi(state.editId);
   tutupForm();
   toast("transaksi dihapus");
@@ -266,6 +305,7 @@ function pasangDialog() {
   /* Ganti tipe masuk/keluar = ganti daftar kategori */
   $("#formTransaksi").addEventListener("change", (e) => {
     if (e.target.name === "tipe") isiKategori(e.target.value, "");
+    else if (e.target.id === "fKategori") perbaruiTujuan();
   });
 
   /* Pratinjau "Rp ..." saat mengetik jumlah */
@@ -434,8 +474,8 @@ function formAset(id) {
     fields.push(
       { nama: "nilai", label: "nilai sekarang (Rp, kosong = sama dengan modal)", tipe: "uang", opsional: true },
       { nama: "tanggal", label: "tanggal beli", tipe: "date", nilai: tanggalAwal(), wajib: true },
-      { nama: "sumber", label: "potong dari dompet (opsional)", tipe: "select", nilai: "",
-        opsi: [["", "tidak dicatat sebagai pengeluaran"]].concat(opsiDompet()) }
+      { nama: "sumber", label: "bayar dari dompet", tipe: "select", nilai: state.dompetTerakhir || opsiDompet()[0][0],
+        opsi: opsiDompet(), wajib: true }
     );
   }
   fields.push({ nama: "catatan", label: "catatan (opsional)", tipe: "text", nilai: a ? a.catatan : "", maks: 80 });
@@ -443,7 +483,7 @@ function formAset(id) {
   bukaFormUmum({
     judul: a ? "Ubah aset" : "Aset baru",
     info: a ? "Untuk mengubah nilai sekarang, pakai tombol 'update nilai'." :
-      "Kalau memilih dompet, modal otomatis dicatat sebagai pengeluaran Invest & Savings. Nilai aset masuk ke Total Assets.",
+      "Modal otomatis dicatat sebagai pengeluaran Invest & Savings dari dompet yang dipilih. Nilai aset masuk ke Total Assets.",
     fields: fields,
     simpan: (v) => (a ? Data.ubahAset(a.id, v) : Data.tambahAset(v, v.sumber)),
     hapus: a ? () => Data.hapusAset(a.id) : null,
@@ -495,7 +535,7 @@ function formGoal(id) {
   const g = id ? state.data.goals.find((x) => x.id === id) : null;
   bukaFormUmum({
     judul: g ? "Ubah goal" : "Goal baru",
-    info: "Isi tenggat kalau mau dihitung berapa yang perlu ditabung per bulan.",
+    info: "Isi tenggat kalau mau dihitung berapa yang perlu ditabung per bulan. \"Sudah terkumpul\" hanya untuk progres dan tidak dihitung ke Total Assets (dianggap uangnya sudah ada di dompet).",
     fields: [
       { nama: "nama", label: "nama goal (misal Dana Darurat)", tipe: "text", nilai: g ? g.nama : "", maks: 30, wajib: true },
       { nama: "target", label: "target (Rp)", tipe: "uang", nilai: g ? g.target : "", wajib: true },
@@ -505,7 +545,7 @@ function formGoal(id) {
     ],
     simpan: (v) => (g ? Data.ubahGoal(g.id, v) : Data.tambahGoal(v)),
     hapus: g ? () => Data.hapusGoal(g.id) : null,
-    konfirmasiHapus: "Hapus goal ini beserta riwayat dananya?",
+    konfirmasiHapus: "Hapus goal ini beserta riwayat dananya? Pengeluaran di dompet tetap ada, jadi uangnya dianggap sudah terpakai dan keluar dari Total Assets. Kalau mau mengembalikan ke dompet, hapus dulu setorannya satu per satu.",
     pesan: g ? "goal diubah" : "goal dibuat"
   });
 }
@@ -516,12 +556,12 @@ function formSetoran(goalId) {
   const i = infoGoal(g);
   bukaFormUmum({
     judul: "Tambah dana: " + g.nama,
-    info: "Terkumpul " + rupiah(i.terkumpul) + " dari " + rupiah(g.target) + ". Pilih dompet kalau uangnya diambil dari dompet (dicatat sebagai pengeluaran Invest & Savings).",
+    info: "Terkumpul " + rupiah(i.terkumpul) + " dari " + rupiah(g.target) + ". Uang diambil dari dompet (dicatat sebagai pengeluaran Invest & Savings) dan tetap dihitung di Total Assets sebagai Dana Goals.",
     fields: [
       { nama: "jumlah", label: "jumlah (Rp)", tipe: "uang", nilai: i.perBulan || "", wajib: true },
       { nama: "tanggal", label: "tanggal", tipe: "date", nilai: hariIni(), wajib: true },
-      { nama: "dompetId", label: "ambil dari dompet (opsional)", tipe: "select", nilai: "",
-        opsi: [["", "tidak dicatat sebagai pengeluaran"]].concat(opsiDompet()) },
+      { nama: "dompetId", label: "ambil dari dompet", tipe: "select", nilai: state.dompetTerakhir || opsiDompet()[0][0],
+        opsi: opsiDompet(), wajib: true },
       { nama: "catatan", label: "catatan (opsional)", tipe: "text", maks: 80 }
     ],
     simpan: (v) => Data.tambahSetoran(g.id, v, v.dompetId),
@@ -634,9 +674,7 @@ async function resetData() {
 function sudahTerpasang() {
   try {
     const standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
-    /* Di dalam aplikasi APK (Android WebView) tidak perlu menawarkan unduhan lagi */
-    const webview = /; wv\)|gonative|median/i.test(navigator.userAgent || "");
-    return standalone || webview;
+    return standalone;
   } catch (e) { return false; }
 }
 
@@ -644,7 +682,7 @@ function sudahTerpasang() {
 function infoPasang() {
   const ua = navigator.userAgent || "";
   const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  return { terpasang: sudahTerpasang(), bisa: Boolean(state.promptPasang), ios: ios, android: /android/i.test(ua) };
+  return { terpasang: sudahTerpasang(), bisa: Boolean(state.promptPasang), ios: ios };
 }
 
 /* Browser menawarkan pemasangan: simpan, tampilkan tombol di Pengaturan */

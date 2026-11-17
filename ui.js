@@ -1,5 +1,5 @@
 /* ================================================================
-   UI.JS - HELPER, PERHITUNGAN, GRAFIK, TEMA  [aplikasi v1.4.2]
+   UI.JS - HELPER, PERHITUNGAN, GRAFIK, TEMA  [aplikasi v1.4.6]
    Isi file ini: helper format (rupiah, tanggal), fungsi hitung
    (net worth, aset, utang, budget vs actual), penggambar grafik
    (donat & garis, SVG murni tanpa library), dan penerap tema.
@@ -161,11 +161,41 @@ function sisaUtangPada(data, utang, tgl) {
   return Math.max(0, utang.pokok - terbayarUtang(data, utang.id, tgl));
 }
 
+/* Transaksi Invest & Savings yang tertaut ke goal (lewat setoran) atau aset
+   (lewat asetId). Hasil: { jenis: "goal"|"aset", id, nama } atau null. */
+function tertaut(data, trxId) {
+  for (const g of data.goals) {
+    if (g.setoran.some((s) => s.trxId === trxId)) return { jenis: "goal", id: g.id, nama: g.nama };
+  }
+  const t = data.transaksi.find((x) => x.id === trxId);
+  if (t && t.asetId) {
+    const a = data.aset.find((x) => x.id === t.asetId);
+    if (a) return { jenis: "aset", id: a.id, nama: a.nama };
+  }
+  return null;
+}
+
+/* --- Dana Goals: uang yang sudah disetor ke goal lewat dompet ---
+   Setoran goal yang memilih dompet dicatat sebagai pengeluaran (saldo dompet
+   berkurang), jadi nilainya harus ditambahkan lagi ke Total Assets supaya
+   net worth tidak turun. Yang dihitung adalah transaksi pengeluaran yang
+   tertaut ke setoran (trxId), bukan angka di goal, supaya selalu sama dengan
+   yang berkurang dari dompet. Saldo awal goal dan setoran lama tanpa
+   transaksi TIDAK dihitung: uangnya masih ada di dompet (sudah terhitung). */
+function nilaiGoalPada(data, tgl) {
+  const tertaut = new Set();
+  data.goals.forEach((g) => g.setoran.forEach((s) => { if (s.trxId) tertaut.add(s.trxId); }));
+  return data.transaksi
+    .filter((t) => tertaut.has(t.id) && t.tanggal <= tgl)
+    .reduce((s, t) => s + t.jumlah, 0);
+}
+
 /* --- Posisi keuangan pada tanggal tertentu ---
    Cash on Hand        = dompet berjenis tunai
    Digital & Bank      = dompet berjenis bank / e-wallet
    Investasi           = total nilai aset
-   Total Assets        = ketiganya
+   Dana Goals          = uang yang sudah disetor ke goal
+   Total Assets        = keempatnya
    Net Worth           = Total Assets - Liabilities                  */
 function posisi(data, tgl) {
   const dompet = data.dompet.map((d) => ({ dompet: d, saldo: saldoDompetPada(data, d.id, tgl) }));
@@ -178,9 +208,11 @@ function posisi(data, tgl) {
   const utang = data.utang.map((u) => ({ utang: u, sisa: sisaUtangPada(data, u, tgl) }));
   const liabilitas = jumlahArray(utang, (x) => x.sisa);
 
-  const totalAset = tunai + digital + investasi;
+  const goal = nilaiGoalPada(data, tgl);
+
+  const totalAset = tunai + digital + investasi + goal;
   return {
-    tunai: tunai, digital: digital, investasi: investasi,
+    tunai: tunai, digital: digital, investasi: investasi, goal: goal,
     totalAset: totalAset, liabilitas: liabilitas, netWorth: totalAset - liabilitas,
     dompet: dompet, aset: aset, utang: utang
   };
@@ -262,18 +294,32 @@ function statusAnggaran(tipe, persen) {
   return persen > 100 ? "over" : persen >= 80 ? "warn" : "ok";
 }
 
-/* --- Kesehatan keuangan --- */
+/* --- Kesehatan keuangan ---
+   Kategori Invest & Savings memang tercatat sebagai expenses (supaya saldo
+   dompet berkurang), tapi uangnya tidak hilang: jadi tabungan / investasi.
+   Karena itu TIDAK dihitung sebagai pengeluaran di savings rate dan
+   dana darurat. Pola nama sama dengan yang dipakai storage.js. */
+
+function keluarOperasional(data, bulan) {
+  const idTabung = new Set(data.kategori.filter((k) => k.tipe === "keluar" && POLA_TABUNG.test(k.nama)).map((k) => k.id));
+  return transaksiBulan(data, bulan)
+    .filter((t) => t.tipe === "keluar" && !idTabung.has(t.kategoriId))
+    .reduce((s, t) => s + t.jumlah, 0);
+}
+
 function kesehatan(data, bulan) {
   const tgt = batasTanggal(bulan);
   const p = posisi(data, tgt);
   const t = totalBulan(data, bulan);
+  const keluarOps = keluarOperasional(data, bulan);
 
-  const rasioTabung = t.masuk > 0 ? (t.masuk - t.keluar) / t.masuk : null;
+  const rasioTabung = t.masuk > 0 ? (t.masuk - keluarOps) / t.masuk : null;
   const rasioUtang = p.totalAset > 0 ? p.liabilitas / p.totalAset : null;
 
-  /* Dana darurat: kas (cash + bank + e-wallet) dibagi rata-rata pengeluaran 3 bulan */
-  const bulanKeluar = trenArusKas(data, bulan, 3).filter((x) => x.keluar > 0);
-  const rataKeluar = bulanKeluar.length ? jumlahArray(bulanKeluar, (x) => x.keluar) / bulanKeluar.length : 0;
+  /* Dana darurat: kas (cash + bank + e-wallet) dibagi rata-rata pengeluaran
+     3 bulan (tanpa Invest & Savings; bulan tanpa pengeluaran tidak dihitung) */
+  const bulanKeluar = [0, 1, 2].map((i) => keluarOperasional(data, geserBulan(bulan, -i))).filter((x) => x > 0);
+  const rataKeluar = bulanKeluar.length ? jumlahArray(bulanKeluar, (x) => x) / bulanKeluar.length : 0;
   const kas = p.tunai + p.digital;
   const danaDarurat = rataKeluar > 0 ? kas / rataKeluar : null;
 
@@ -447,7 +493,8 @@ const IKON = {
   kartu: "M3 5h18v14H3zM3 10h18M7 15h3",
   tunai: "M3 6.5h18v11H3zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z",
   hp: "M7 3h10v18H7zM11 18h2",
-  grafik: "M4 20V5M4 20h16M8 16v-5M12 16V8M16 16v-3"
+  grafik: "M4 20V5M4 20h16M8 16v-5M12 16V8M16 16v-3",
+  goal: "M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"
 };
 function ikon(nama) {
   return '<svg class="ik" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (IKON[nama] || "") + '"/></svg>';

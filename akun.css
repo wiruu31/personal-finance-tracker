@@ -1,5 +1,5 @@
 /* ================================================================
-   AKUN.CSS - TOMBOL & DIALOG AKUN  [versi 1.4.2]
+   AKUN.CSS - TOMBOL & DIALOG AKUN  [versi 1.4.6]
    Hanya gaya untuk fitur banyak akun. Memakai variabel warna dari
    keuangan.css (--aksen, --panel, dll), jadi ikut tema yang dipilih.
    Dimuat setelah keuangan.css.
@@ -102,11 +102,3 @@
   .app-header .logo:not(.logo--menu) { display: none; }
 }
 /* ===== LAYAR LEBAR END ===== */
-
-
-/* ===== TAUTAN SEBAGAI TOMBOL START =====
-   Tombol "pasang sekarang" (unduh APK) berupa <a class="btn">:
-   tanpa garis bawah, seukuran tombol biasa.
-   ================================================================ */
-a.btn { text-decoration: none; }
-/* ===== TAUTAN SEBAGAI TOMBOL END ===== */

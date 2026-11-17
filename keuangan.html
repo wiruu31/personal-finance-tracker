@@ -4,7 +4,7 @@
   <!-- ===== HEAD START =====
        Pengaturan dasar halaman. Edit judul tab di <title>.
        File yang dipakai (semua satu folder):
-       keuangan.css (v1.4.2), akun.css, storage.js, ui.js, halaman.js, app.js,
+       keuangan.css (v1.4.6), akun.css, storage.js, ui.js, halaman.js, app.js,
        akun.js,
        manifest.webmanifest, sw.js, dan folder icons/
        ============================================================ -->
@@ -58,7 +58,7 @@
     <button type="button" class="nav-btn" data-aksi="tab" data-tab="pengaturan">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9M13 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM7 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"/></svg><span>Atur</span></button>
     <div class="nav-kosong" aria-hidden="true"></div>
-    <div class="nav-kaki" aria-hidden="true"><b>keuangan <span class="versi-app">v1.4.2</span></b>Data tersimpan di perangkat ini dan jalan tanpa internet.</div>
+    <div class="nav-kaki" aria-hidden="true"><b>keuangan <span class="versi-app">v1.4.6</span></b>Data tersimpan di perangkat ini dan jalan tanpa internet.</div>
   </nav>
   <!-- ===== NAVIGASI END ===== -->
 
@@ -161,7 +161,7 @@
            ============================================================ -->
       <footer class="footer">
         <p>&copy; <span id="tahunCopyright">2026</span> Muh Geris Wiruno Mandawa. Semua hak dilindungi.</p>
-        <p class="footer-kecil"><span>Data tersimpan di perangkat ini saja.</span><span>Version.<span class="versi-app">1.4.2</span></span></p>
+        <p class="footer-kecil"><span>Data tersimpan di perangkat ini saja.</span><span>Version.<span class="versi-app">1.4.6</span></span></p>
       </footer>
       <!-- ===== FOOTER END ===== -->
 
@@ -208,6 +208,11 @@
         </div>
       </div>
 
+      <div class="field" id="fieldTujuan" hidden>
+        <label for="fTujuan">masuk ke (goal atau aset)</label>
+        <select id="fTujuan"></select>
+      </div>
+
       <div class="field">
         <label for="fTanggal">tanggal</label>
         <input type="date" id="fTanggal" required>
@@ -221,7 +226,7 @@
       <div class="sheet-actions">
         <button type="button" class="btn btn--danger" id="btnHapusTransaksi" data-aksi="hapus-transaksi" hidden>hapus</button>
         <button type="button" class="btn" data-aksi="tutup-dialog">batal</button>
-        <button type="submit" class="btn btn--solid">simpan</button>
+        <button type="submit" class="btn btn--solid" id="btnSimpanTransaksi">simpan</button>
       </div>
     </form>
   </dialog>

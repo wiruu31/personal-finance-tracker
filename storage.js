@@ -1,5 +1,5 @@
 /* ================================================================
-   STORAGE.JS - URUSAN DATA (SIMPAN / AMBIL)  [aplikasi v1.4.2, data skema 2]
+   STORAGE.JS - URUSAN DATA (SIMPAN / AMBIL)  [aplikasi v1.4.6, data skema 2]
    Semua akses data aplikasi lewat objek "Data" di file ini.
    File lain (ui.js, halaman.js, app.js) TIDAK menyentuh localStorage.
 
@@ -26,7 +26,7 @@
 let KUNCI_DATA = "keuangan.v2";   /* diatur akun.js sesuai akun aktif */
 let KUNCI_LAMA = "keuangan.v1";
 
-const VERSI_APP = "1.4.2";
+const VERSI_APP = "1.4.6";
 
 const MODE_TEMA = ["auto", "terang", "gelap"];
 
@@ -49,6 +49,10 @@ const JENIS_DOMPET = [
 ];
 
 const TIPE_KATEGORI = ["masuk", "keluar", "utang", "aset"];
+
+/* Kategori Expenses yang berarti menabung / investasi (nama memuat kata ini).
+   Transaksi di kategori ini WAJIB punya tujuan (goal atau aset). */
+const POLA_TABUNG = /invest|saving|tabung/i;
 
 const DOMPET_AWAL = [
   { nama: "Tunai", jenis: "tunai",   saldoAwal: 0 },
@@ -115,7 +119,7 @@ function rangka() {
     pengaturan: pengaturanAwal(),
     dompet: [],      // { id, nama, jenis, saldoAwal }
     kategori: [],    // { id, nama, tipe, batas }   batas = budget per bulan
-    transaksi: [],   // { id, dompetId, kategoriId, tipe, jumlah, tanggal, catatan, utangId? }
+    transaksi: [],   // { id, dompetId, kategoriId, tipe, jumlah, tanggal, catatan, utangId?, asetId? }
     transfer: [],    // { id, dariId, keId, jumlah, tanggal, catatan }
     aset: [],        // { id, nama, kategoriId, modal, catatan, riwayat:[{tanggal,nilai}] }
     utang: [],       // { id, nama, kategoriId, pokok, tanggal, catatan }
@@ -142,6 +146,26 @@ function cariKategori(db, tipe, pola) {
     throw new Error("Belum ada kategori " + (tipe === "keluar" ? "Expenses" : "Income") + ". Tambah dulu di Pengaturan");
   }
   return hasil;
+}
+
+/* Tambah / kurangi modal aset karena transaksi Invest & Savings.
+   Nilai aset di riwayat ikut naik / turun sebesar jumlahnya, mulai tanggal itu. */
+function modalAsetTambah(a, jumlah, tanggal) {
+  const urut = a.riwayat.slice().sort(urutTanggal);
+  if (tanggal < urut[0].tanggal) throw new Error("Tanggal sebelum aset dibeli (" + urut[0].tanggal + ")");
+  let sebelum = 0;
+  urut.forEach((r) => { if (r.tanggal <= tanggal) sebelum = r.nilai; });
+  a.riwayat.forEach((r) => { if (r.tanggal > tanggal) r.nilai += jumlah; });
+  const sama = a.riwayat.find((r) => r.tanggal === tanggal);
+  if (sama) sama.nilai += jumlah;
+  else a.riwayat.push({ tanggal: tanggal, nilai: sebelum + jumlah });
+  a.riwayat.sort(urutTanggal);
+  a.modal += jumlah;
+}
+
+function modalAsetKurang(a, jumlah, tanggal) {
+  a.riwayat.forEach((r) => { if (r.tanggal >= tanggal) r.nilai = Math.max(0, r.nilai - jumlah); });
+  a.modal = Math.max(0, a.modal - jumlah);
 }
 
 /* Total pembayaran utang (boleh mengecualikan satu transaksi) */
@@ -193,7 +217,8 @@ function cekData(d) {
     if (typeof x.id !== "string" || !ok(x.jumlah) || x.jumlah <= 0 ||
         (x.tipe !== "masuk" && x.tipe !== "keluar") || !validTanggal(x.tanggal) ||
         !idDompet.has(x.dompetId) || !idKategori.has(x.kategoriId) ||
-        (x.utangId !== undefined && !idUtang.has(x.utangId))) return "ada transaksi yang rusak";
+        (x.utangId !== undefined && !idUtang.has(x.utangId)) ||
+        (x.asetId !== undefined && typeof x.asetId !== "string")) return "ada transaksi yang rusak";
   }
   for (const x of d.transfer) {
     if (typeof x.id !== "string" || !ok(x.jumlah) || x.jumlah <= 0 || !validTanggal(x.tanggal) ||
@@ -408,10 +433,43 @@ const Data = {
     return hasil;
   },
 
+  /* Transaksi kategori Invest & Savings: tujuan = "goal:<id>" atau "aset:<id>".
+     Goal -> jadi setoran goal (masuk Dana Goals). Aset -> modal & nilai aset naik.
+     Baru: tujuan wajib. Ubah transaksi lama yang belum tertaut: tujuan boleh kosong. */
+  _terapkanTujuan(db, trx, tujuan, wajib) {
+    const kat = db.kategori.find((k) => k.id === trx.kategoriId);
+    if (!kat || kat.tipe !== "keluar" || !POLA_TABUNG.test(kat.nama) || trx.utangId) return;
+    if (!tujuan) {
+      if (wajib) throw new Error("Pilih tujuan: goal atau aset (buat dulu di halaman Goals atau Kekayaan kalau belum ada)");
+      return;
+    }
+    const pisah = String(tujuan).indexOf(":");
+    const jenis = String(tujuan).slice(0, pisah);
+    const id = String(tujuan).slice(pisah + 1);
+    if (jenis === "goal") {
+      const g = db.goals.find((x) => x.id === id);
+      if (!g) throw new Error("Goal tujuan tidak ditemukan");
+      g.setoran.push({ id: buatId(), tanggal: trx.tanggal, jumlah: trx.jumlah, catatan: trx.catatan, trxId: trx.id });
+    } else if (jenis === "aset") {
+      const a = db.aset.find((x) => x.id === id);
+      if (!a) throw new Error("Aset tujuan tidak ditemukan");
+      modalAsetTambah(a, trx.jumlah, trx.tanggal);
+      trx.asetId = a.id;
+    } else {
+      throw new Error("Tujuan tidak valid");
+    }
+  },
+
+  _tertaut(db, id) {
+    const t = db.transaksi.find((x) => x.id === id);
+    return Boolean(t && t.asetId) || db.goals.some((g) => g.setoran.some((s) => s.trxId === id));
+  },
+
   async tambahTransaksi(t) {
     return this._ubah((db) => {
       const baru = this._cekTransaksi(db, t, null);
       baru.id = buatId();
+      this._terapkanTujuan(db, baru, t.tujuan, true);
       db.transaksi.push(baru);
       return baru;
     });
@@ -422,17 +480,30 @@ const Data = {
       const i = db.transaksi.findIndex((x) => x.id === id);
       if (i < 0) throw new Error("Transaksi tidak ditemukan");
       const lama = db.transaksi[i];
+      if (this._tertaut(db, id)) {
+        throw new Error("Transaksi ini tertaut ke goal / aset. Hapus lalu catat ulang kalau mau mengubahnya");
+      }
       const masuk = Object.assign({}, t);
       if (lama.utangId) { masuk.utangId = lama.utangId; masuk.kategoriId = lama.kategoriId; }
       const baru = this._cekTransaksi(db, masuk, id);
       baru.id = id;
+      this._terapkanTujuan(db, baru, t.tujuan, false);
       db.transaksi[i] = baru;
       return baru;
     });
   },
 
+  /* Hapus transaksi tertaut = setoran goal / modal aset terkait ikut dikembalikan */
   async hapusTransaksi(id) {
     return this._ubah((db) => {
+      const t = db.transaksi.find((x) => x.id === id);
+      if (t) {
+        db.goals.forEach((g) => { g.setoran = g.setoran.filter((s) => s.trxId !== id); });
+        if (t.asetId) {
+          const a = db.aset.find((x) => x.id === t.asetId);
+          if (a) modalAsetKurang(a, t.jumlah, t.tanggal);
+        }
+      }
       db.transaksi = db.transaksi.filter((x) => x.id !== id);
     });
   },
@@ -568,8 +639,8 @@ const Data = {
      [DATA 6] ASET (investasi, properti, dll)
      Input: { nama, kategoriId, modal, nilai, tanggal, catatan }
      modal = harga beli, nilai = nilai sekarang.
-     sumberDompetId (opsional): kalau diisi, otomatis dicatat sebagai
-     pengeluaran (kategori Invest & Savings) sebesar modal.
+     sumberDompetId (WAJIB): otomatis dicatat sebagai pengeluaran
+     (kategori Invest & Savings) sebesar modal.
      Nilai terbaru disimpan di riwayat supaya grafik net worth
      bisa menampilkan nilai aset di bulan-bulan lalu.
      ------------------------------------------------------------ */
@@ -582,6 +653,7 @@ const Data = {
 
   async tambahAset(a, sumberDompetId) {
     return this._ubah((db) => {
+      if (!sumberDompetId) throw new Error("Pilih dompet untuk membayar aset ini");
       const baru = this._cekAset(db, a);
       baru.modal = intMin(a.modal, 1, "Modal harus angka bulat lebih dari 0");
       const nilai = intMin(a.nilai === "" || a.nilai == null ? a.modal : a.nilai, 0, "Nilai harus angka bulat");
@@ -591,9 +663,9 @@ const Data = {
       if (nilai !== baru.modal) baru.riwayat.push({ tanggal: a.tanggal > hariIniDB() ? a.tanggal : hariIniDB(), nilai: nilai });
       db.aset.push(baru);
 
-      if (sumberDompetId) {
+      {
         if (!db.dompet.some((d) => d.id === sumberDompetId)) throw new Error("Dompet sumber tidak ditemukan");
-        const kat = cariKategori(db, "keluar", /invest|saving|tabung/i);
+        const kat = cariKategori(db, "keluar", POLA_TABUNG);
         db.transaksi.push({
           id: buatId(), dompetId: sumberDompetId, kategoriId: kat.id, tipe: "keluar",
           jumlah: baru.modal, tanggal: a.tanggal, catatan: ("beli " + baru.nama).slice(0, 80)
@@ -626,7 +698,10 @@ const Data = {
   },
 
   async hapusAset(id) {
-    return this._ubah((db) => { db.aset = db.aset.filter((a) => a.id !== id); });
+    return this._ubah((db) => {
+      db.transaksi.forEach((t) => { if (t.asetId === id) delete t.asetId; });
+      db.aset = db.aset.filter((a) => a.id !== id);
+    });
   },
 
   /* ------------------------------------------------------------
@@ -683,8 +758,9 @@ const Data = {
        awal = sudah terkumpul sebelum dicatat di sini
        tenggat = tanggal target ("" kalau tanpa tenggat)
      Setoran: { jumlah, tanggal, catatan }.
-     Kalau dompetId diisi, setoran juga dicatat sebagai pengeluaran
-     (kategori Invest & Savings) supaya saldo dompet ikut berkurang.
+     dompetId WAJIB: setoran dicatat sebagai pengeluaran (kategori
+     Invest & Savings) supaya saldo dompet ikut berkurang, lalu nilainya
+     ditambahkan lagi ke Total Assets lewat "Dana Goals" (lihat ui.js).
      ------------------------------------------------------------ */
   _cekGoal(g) {
     const nama = teksBersih(g.nama, 30);
@@ -727,18 +803,17 @@ const Data = {
       if (!g) throw new Error("Goal tidak ditemukan");
       const jumlah = intMin(s.jumlah, 1, "Jumlah harus angka bulat lebih dari 0");
       if (!validTanggal(s.tanggal)) throw new Error("Tanggal tidak valid");
+      if (!dompetId) throw new Error("Pilih dompet asal dana");
 
       const setor = { id: buatId(), tanggal: s.tanggal, jumlah: jumlah, catatan: teksBersih(s.catatan, 80) };
-      if (dompetId) {
-        if (!db.dompet.some((d) => d.id === dompetId)) throw new Error("Dompet tidak ditemukan");
-        const kat = cariKategori(db, "keluar", /invest|saving|tabung/i);
-        const trxId = buatId();
-        db.transaksi.push({
-          id: trxId, dompetId: dompetId, kategoriId: kat.id, tipe: "keluar",
-          jumlah: jumlah, tanggal: s.tanggal, catatan: ("goal: " + g.nama).slice(0, 80)
-        });
-        setor.trxId = trxId;
-      }
+      if (!db.dompet.some((d) => d.id === dompetId)) throw new Error("Dompet tidak ditemukan");
+      const kat = cariKategori(db, "keluar", POLA_TABUNG);
+      const trxId = buatId();
+      db.transaksi.push({
+        id: trxId, dompetId: dompetId, kategoriId: kat.id, tipe: "keluar",
+        jumlah: jumlah, tanggal: s.tanggal, catatan: ("goal: " + g.nama).slice(0, 80)
+      });
+      setor.trxId = trxId;
       g.setoran.push(setor);
     });
   },
