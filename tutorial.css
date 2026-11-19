@@ -1,0 +1,139 @@
+/* ================================================================
+   TUTORIAL.CSS - TUR PENGENALAN + SKELETON LOADING  [versi 1.5.0]
+   Memakai variabel warna dari keuangan.css (--aksen, --panel, --ink,
+   dll), jadi ikut tema (terang/gelap, semua palet, warna kustom).
+   Dimuat setelah keuangan.css dan akun.css.
+
+   Daftar bagian:
+   SKELETON | TUR
+   ================================================================ */
+
+
+/* ===== SKELETON START =====
+   Balok abu berdenyut. Warna dasar = sedikit warna teks di atas
+   latar kartu, jadi cocok di mode terang maupun gelap.
+   Animasi mati otomatis untuk pengguna "kurangi gerakan"
+   (aturan di bagian AKSESIBILITAS keuangan.css).
+   ================================================================ */
+.skel {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 10%, transparent), transparent);
+  animation: skel-kilau 1.4s ease-in-out infinite;
+}
+@keyframes skel-kilau { to { transform: translateX(100%); } }
+
+.skel-bulat { flex: none; border-radius: 50%; }
+.skel-pil   { border-radius: 999px; }
+.skel-judul { margin-bottom: 14px; }
+
+.skel-kolom { display: grid; gap: 10px; min-width: 0; align-content: start; }
+.skel-baris { display: flex; align-items: center; gap: 12px; }
+.skel-baris .skel-kolom { flex: 1; }
+.skel-donat { gap: 18px; }
+.skel-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+
+/* Teks untuk pembaca layar, tidak terlihat */
+.skel-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Selama loading, tombol navigasi dan tambah tidak bisa diketuk
+   (supaya form tidak terbuka dengan data akun sebelumnya) */
+body.skel-aktif .nav,
+body.skel-aktif .fab,
+body.skel-aktif .app-header { pointer-events: none; }
+/* ===== SKELETON END ===== */
+
+
+/* ===== TUR START =====
+   Lapisan penuh layar: sorotan (lubang terang dengan bayangan gelap
+   di sekelilingnya) dan kartu petunjuk.
+   ================================================================ */
+.tur {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  touch-action: none;
+}
+
+.tur-sorot {
+  position: fixed;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px var(--aksen),
+    0 0 22px 2px color-mix(in srgb, var(--aksen) 45%, transparent),
+    0 0 0 150vmax rgba(3, 6, 12, .74);
+  pointer-events: none;
+}
+/* Tanpa target: layar digelapkan penuh, tanpa bingkai */
+.tur-sorot--kosong {
+  border-radius: 0;
+  box-shadow: 0 0 0 150vmax rgba(3, 6, 12, .74);
+}
+
+.tur-kartu {
+  position: fixed;
+  overflow-y: auto;
+  padding: 18px 18px 14px;
+  border: 1px solid var(--border-kuat);
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 70% at 100% 0%, color-mix(in srgb, var(--aksen) 14%, transparent), transparent 62%),
+    var(--panel);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .4);
+  color: var(--ink);
+  animation: muncul .25s ease-out;
+}
+.tur-kartu:focus { outline: none; }
+
+/* Geser halus antar langkah (aktif setelah posisi pertama terpasang) */
+.tur-siap .tur-sorot { transition: left .28s ease, top .28s ease, width .28s ease, height .28s ease; }
+.tur-siap .tur-kartu { transition: left .28s ease, top .28s ease; }
+
+.tur-ke    { margin-bottom: 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--aktx); }
+.tur-judul { margin-bottom: 8px; font-size: 18px; font-weight: 700; letter-spacing: -.02em; }
+.tur-isi   { font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.tur-isi strong { color: var(--ink); font-weight: 600; }
+
+.tur-titik { display: flex; flex-wrap: wrap; gap: 5px; margin: 14px 0 6px; }
+.tur-titik i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-kuat);
+  transition: background .2s, width .2s;
+}
+.tur-titik i.is-lewat { background: var(--aksen-garis); }
+.tur-titik i.is-aktif { width: 18px; border-radius: 999px; background: var(--aksen); }
+
+.tur-aksi { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
+.tur-nav  { display: flex; gap: 8px; }
+.tur-nav .btn { min-height: 42px; }
+.tur-lewati {
+  min-height: 42px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.tur-lewati:hover { color: var(--ink); }
+/* ===== TUR END ===== */

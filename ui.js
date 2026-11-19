@@ -1,5 +1,5 @@
 /* ================================================================
-   UI.JS - HELPER, PERHITUNGAN, GRAFIK, TEMA  [aplikasi v1.4.6]
+   UI.JS - HELPER, PERHITUNGAN, GRAFIK, TEMA  [aplikasi v1.5.0]
    Isi file ini: helper format (rupiah, tanggal), fungsi hitung
    (net worth, aset, utang, budget vs actual), penggambar grafik
    (donat & garis, SVG murni tanpa library), dan penerap tema.

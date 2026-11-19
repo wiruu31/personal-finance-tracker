@@ -13,7 +13,7 @@
    INTI di bawah. Ganti VERSI kalau mau memaksa cache dibuang.
    ================================================================ */
 
-const VERSI = "keuangan-v1.4.6";
+const VERSI = "keuangan-v1.5.0";
 
 const INTI = [
   "./",
@@ -25,6 +25,8 @@ const INTI = [
   "./app.js",
   "./akun.js",
   "./akun.css",
+  "./tutorial.js",
+  "./tutorial.css",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-192.png",

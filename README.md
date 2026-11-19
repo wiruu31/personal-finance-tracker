@@ -2,7 +2,23 @@
 
 Catatan keuangan pribadi yang jalan di browser: net worth, dompet, aset, utang, budget, goals. Bisa dipasang seperti aplikasi (PWA) dan jalan tanpa internet. Data tersimpan di perangkat, tidak dikirim ke mana pun.
 
-**Versi: 1.4.6** (Invest & Savings wajib punya tujuan)
+**Versi: 1.5.0** (tutorial awal dan skeleton loading)
+
+## Fitur v1.5.0: tutorial dan skeleton loading
+
+**Tutorial (tur pengenalan, 13 langkah)**
+- Muncul **otomatis saat pertama kali dibuka**. Elemen asli disorot satu per satu dan tab pindah sendiri. Isinya: banyak akun, pemilih bulan, Home, tombol tambah, Arus Kas, Transaksi, Kekayaan, Goals, lalu tiga langkah setelan (tampilan, anggaran dan kategori, data dan cadangan) dan penutup.
+- Tombol **Lewati**, **Kembali**, dan **Lanjut**. Di komputer bisa pakai panah kiri/kanan dan Esc.
+- Mau lihat lagi? **Pengaturan > Bantuan > Lihat tutorial**. Tur yang diulang dari Pengaturan kembali ke halaman asalnya; tur otomatis berakhir di Home.
+- Status "sudah lihat" disimpan **global** di `keuangan.tutorial` (bukan per akun), jadi akun baru tidak memunculkannya lagi. Selesai atau dilewati dianggap sama.
+- Pengguna lama yang update dari versi sebelumnya juga melihat tur ini **sekali**.
+- Mengubah isi tutorial: edit daftar `TUR_LANGKAH` di `tutorial.js`.
+
+**Skeleton loading**
+- Kerangka abu berdenyut tampil saat membuka aplikasi, pindah akun, membuat akun, impor, dan reset. Ada skeleton khusus untuk tiap halaman.
+- Ditahan minimal 400 ms supaya tidak berkedip (konstanta `TAHAN_SKELETON_MS` di `app.js`).
+- Warna mengikuti tema aktif, dan animasi mati untuk pengguna yang memilih "kurangi gerakan".
+- Skeleton Home juga ditulis langsung di `keuangan.html` supaya sudah tampil sebelum JavaScript jalan.
 
 ## Fitur v1.4.0: banyak akun
 
@@ -24,22 +40,24 @@ Semua file ada dalam satu folder (folder `icons/` tetap seperti sebelumnya).
 | --- | --- |
 | `keuangan.html` | Kerangka halaman |
 | `keuangan.css` | Tampilan utama (tidak berubah selain nomor versi) |
-| `akun.css` | **Baru.** Gaya tombol dan dialog akun |
+| `akun.css` | Gaya tombol dan dialog akun |
 | `storage.js` | Penyimpanan data (nama penyimpanan kini bisa berganti sesuai akun) |
 | `ui.js` | Helper, hitungan, grafik, tema |
 | `halaman.js` | Menggambar semua halaman |
 | `app.js` | Penghubung dan event |
-| `akun.js` | **Baru.** Daftar akun, pindah, tambah, ubah nama, hapus, tema global |
+| `akun.js` | Daftar akun, pindah, tambah, ubah nama, hapus, tema global |
+| `tutorial.js` | **Baru.** Tur pengenalan dan skeleton loading |
+| `tutorial.css` | **Baru.** Gaya tur dan skeleton |
 | `sw.js` | Service worker (offline) |
 | `manifest.webmanifest` | Pengaturan PWA |
 
-Urutan script di `keuangan.html` wajib: `storage.js`, `ui.js`, `halaman.js`, `app.js`, `akun.js`.
+Urutan script di `keuangan.html` wajib: `storage.js`, `ui.js`, `halaman.js`, `app.js`, `akun.js`, `tutorial.js`.
 
 ## Cara pasang (GitHub Pages)
 
-1. Salin semua file ke repo. Timpa file lama dan tambahkan `akun.js` dan `akun.css`.
+1. Salin semua file ke repo. Timpa file lama dan tambahkan `tutorial.js` dan `tutorial.css`.
 2. Pastikan folder `icons/` tetap ada.
-3. Buka situsnya dan muat ulang. Kalau tampilan masih lama, tutup lalu buka lagi aplikasinya sekali supaya service worker memperbarui cache (versi cache sudah naik ke `keuangan-v1.4.6`).
+3. Buka situsnya dan muat ulang. Kalau tampilan masih lama, tutup lalu buka lagi aplikasinya sekali supaya service worker memperbarui cache (versi cache sudah naik ke `keuangan-v1.5.0`).
 
 ## Tombol "pasang sekarang" (PWA)
 
@@ -55,11 +73,13 @@ Urutan script di `keuangan.html` wajib: `storage.js`, `ui.js`, `halaman.js`, `ap
 | `keuangan.v2.<id>` | Data akun lain |
 | `keuangan.akun` | Daftar akun dan akun yang sedang aktif |
 | `keuangan.tema` | Tema global |
+| `keuangan.tutorial` | Status tutorial sudah dilihat (global) |
 
 Data hanya ada di browser perangkat ini. Kalau data browser dibersihkan atau ganti HP, data hilang, jadi **ekspor JSON tiap akun secara berkala**.
 
 ## Riwayat versi
 
+- **1.5.0**: **tutorial awal** (tur sorotan 13 langkah) yang jalan otomatis saat pertama dibuka dan bisa diulang dari Pengaturan > Bantuan > Lihat tutorial. **Skeleton loading** saat buka aplikasi, pindah/buat akun, impor, dan reset. File baru `tutorial.js` dan `tutorial.css`; `sw.js` mendaftarkan keduanya dan cache naik ke `keuangan-v1.5.0`. Data dan rumus tidak berubah.
 - **1.4.6**: transaksi kategori **Invest & Savings** lewat form Transaksi kini punya kolom wajib **masuk ke** (pilih Goal atau Aset). Goal: jadi setoran goal dan masuk Dana Goals. Aset: modal dan nilai aset bertambah sebesar jumlahnya. Net worth tidak lagi turun saat menabung. Transaksi yang tertaut dikunci (hanya bisa dihapus; menghapus otomatis mengurangi dana goal / modal aset). Transaksi Invest & Savings lama yang belum tertaut bisa ditautkan dengan mengetuknya lalu memilih tujuan. Daftar transaksi menampilkan "ke goal / aset ...". Cache service worker naik ke `keuangan-v1.4.6`.
 - **1.4.5**: tombol **pasang sekarang** kembali memasang PWA (bisa offline), tidak lagi mengunduh file APK. Kode dan keterangan APK dihapus (`FILE_APK`, deteksi WebView, aturan APK di service worker, gaya `a.btn`).
 - **1.4.4**: uang di goal kini masuk **Total Assets** sebagai **Dana Goals**, jadi net worth tidak turun lagi saat menabung ke goal. Form tambah dana goal **wajib memilih dompet** (opsi "tidak dicatat sebagai pengeluaran" dihapus). Setoran mengurangi saldo dompet (pengeluaran Invest & Savings) lalu nilainya ditambahkan lagi lewat Dana Goals. Yang dihitung adalah transaksi yang tertaut ke setoran. Form **aset baru** juga **wajib memilih dompet** (opsi "tidak dicatat sebagai pengeluaran" dihapus), supaya net worth tidak naik tanpa sebab. **Saldo awal goal** dan **setoran lama tanpa dompet** tidak dihitung karena uangnya masih ada di dompet. Menghapus goal = uangnya dianggap terpakai (keluar dari Total Assets); menghapus satu setoran mengembalikan uang ke dompet. Grafik tren net worth ikut memakai Dana Goals per tanggal. Kartu baru "Dana Goals" di Home dan baris "Masuk Total Assets" di Goals.

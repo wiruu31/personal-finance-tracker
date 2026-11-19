@@ -1,5 +1,5 @@
 /* ================================================================
-   AKUN.JS - BANYAK AKUN, DATA TIAP AKUN TERPISAH  [aplikasi v1.4.6]
+   AKUN.JS - BANYAK AKUN, DATA TIAP AKUN TERPISAH  [aplikasi v1.5.0]
    Tiap akun punya penyimpanan sendiri di browser (localStorage).
    Akun pertama ("Utama") memakai penyimpanan lama "keuangan.v2",
    jadi data yang sudah ada tidak berpindah dan tidak hilang.
@@ -211,6 +211,7 @@ async function tambahAkun(teks) {
     Akun.buang(baru.id);   // gagal pindah: batalkan akun barunya
     throw e;
   }
+  if (window.Skeleton) window.Skeleton.tampil();   // form umum memanggil muatUlang() setelah ini
 }
 
 function hapusDataAkun(a) {
@@ -328,13 +329,13 @@ document.addEventListener("DOMContentLoaded", () => {
     else if (aksi === "pilih") {
       aman(async () => {
         const id = el.dataset.id;
+        tutupDialogAkun();
         if (id !== Akun.aktif().id) {
           await pindahKe(id);
-          await muatUlang();
+          await muatUlang(true);   // skeleton selama data akun baru dimuat
           pindahTab("home");
           toast("pindah ke akun " + Akun.aktif().nama);
         }
-        tutupDialogAkun();
       });
     }
   });

@@ -4,8 +4,8 @@
   <!-- ===== HEAD START =====
        Pengaturan dasar halaman. Edit judul tab di <title>.
        File yang dipakai (semua satu folder):
-       keuangan.css (v1.4.6), akun.css, storage.js, ui.js, halaman.js, app.js,
-       akun.js,
+       keuangan.css (v1.5.0), akun.css, tutorial.css, storage.js, ui.js, halaman.js,
+       app.js, akun.js, tutorial.js,
        manifest.webmanifest, sw.js, dan folder icons/
        ============================================================ -->
   <meta charset="UTF-8">
@@ -33,6 +33,7 @@
 
   <link rel="stylesheet" href="keuangan.css">
   <link rel="stylesheet" href="akun.css">
+  <link rel="stylesheet" href="tutorial.css">
   <!-- ===== HEAD END ===== -->
 </head>
 <body>
@@ -58,7 +59,7 @@
     <button type="button" class="nav-btn" data-aksi="tab" data-tab="pengaturan">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9M13 7a2 2 0 1 0 4 0 2 2 0 0 0-4 0ZM7 17a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"/></svg><span>Atur</span></button>
     <div class="nav-kosong" aria-hidden="true"></div>
-    <div class="nav-kaki" aria-hidden="true"><b>keuangan <span class="versi-app">v1.4.6</span></b>Data tersimpan di perangkat ini dan jalan tanpa internet.</div>
+    <div class="nav-kaki" aria-hidden="true"><b>keuangan <span class="versi-app">v1.5.0</span></b>Data tersimpan di perangkat ini dan jalan tanpa internet.</div>
   </nav>
   <!-- ===== NAVIGASI END ===== -->
 
@@ -93,13 +94,16 @@
     <!-- ===== HEADER END ===== -->
 
 
-    <main>
+    <main aria-busy="true">
 
       <!-- ===== HOME START =====
            Net worth, total assets, cash, wallets, liabilities, donat.
            Isi digambar oleh halaman.js (renderHome).
            ============================================================ -->
-      <section class="view is-active" id="view-home"><div id="isi-home"></div></section>
+      <section class="view is-active" id="view-home"><div id="isi-home">
+        <!-- Skeleton loading (salinan Skeleton.html("home") di tutorial.js); diganti isi asli oleh halaman.js -->
+        <div class="skel-wrap"><span class="skel-sr" role="status">Memuat data...</span><div aria-hidden="true"><section class="hero"><div class="hero-isi"><div class="skel-kolom"><span class="skel" style="width:96px;height:11px"></span><span class="skel" style="width:64%;height:46px"></span><span class="skel" style="width:48%;height:13px"></span><span class="skel" style="width:70%;height:10px"></span></div></div><div class="hero-spark"><span class="skel" style="width:100%;height:70px"></span></div></section><div class="stat-grid"><div class="stat"><div class="skel-kolom"><span class="skel" style="width:45%;height:11px"></span><span class="skel" style="width:72%;height:20px"></span><span class="skel" style="width:55%;height:10px"></span></div></div><div class="stat"><div class="skel-kolom"><span class="skel" style="width:45%;height:11px"></span><span class="skel" style="width:72%;height:20px"></span><span class="skel" style="width:55%;height:10px"></span></div></div><div class="stat"><div class="skel-kolom"><span class="skel" style="width:45%;height:11px"></span><span class="skel" style="width:72%;height:20px"></span><span class="skel" style="width:55%;height:10px"></span></div></div><div class="stat"><div class="skel-kolom"><span class="skel" style="width:45%;height:11px"></span><span class="skel" style="width:72%;height:20px"></span><span class="skel" style="width:55%;height:10px"></span></div></div><div class="stat"><div class="skel-kolom"><span class="skel" style="width:45%;height:11px"></span><span class="skel" style="width:72%;height:20px"></span><span class="skel" style="width:55%;height:10px"></span></div></div><div class="stat"><div class="skel-kolom"><span class="skel" style="width:45%;height:11px"></span><span class="skel" style="width:72%;height:20px"></span><span class="skel" style="width:55%;height:10px"></span></div></div></div><div class="grid"><article class="card "><span class="skel skel-judul" style="width:42%;height:14px"></span><div class="skel-baris skel-donat"><span class="skel skel-bulat" style="width:112px;height:112px"></span><div class="skel-kolom"><span class="skel" style="width:80%;height:12px"></span><span class="skel" style="width:64%;height:12px"></span><span class="skel" style="width:72%;height:12px"></span></div></div></article><article class="card "><span class="skel skel-judul" style="width:42%;height:14px"></span><div class="skel-baris skel-donat"><span class="skel skel-bulat" style="width:112px;height:112px"></span><div class="skel-kolom"><span class="skel" style="width:80%;height:12px"></span><span class="skel" style="width:64%;height:12px"></span><span class="skel" style="width:72%;height:12px"></span></div></div></article></div><article class="card "><span class="skel skel-judul" style="width:42%;height:14px"></span><span class="skel" style="width:100%;height:150px"></span></article></div></div>
+      </div></section>
       <!-- ===== HOME END ===== -->
 
 
@@ -161,7 +165,7 @@
            ============================================================ -->
       <footer class="footer">
         <p>&copy; <span id="tahunCopyright">2026</span> Muh Geris Wiruno Mandawa. Semua hak dilindungi.</p>
-        <p class="footer-kecil"><span>Data tersimpan di perangkat ini saja.</span><span>Version.<span class="versi-app">1.4.6</span></span></p>
+        <p class="footer-kecil"><span>Data tersimpan di perangkat ini saja.</span><span>Version.<span class="versi-app">1.5.0</span></span></p>
       </footer>
       <!-- ===== FOOTER END ===== -->
 
@@ -274,11 +278,12 @@
   <!-- Notifikasi kecil (diisi oleh app.js -> toast) -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <!-- Urutan WAJIB: storage.js -> ui.js -> halaman.js -> app.js -> akun.js -->
+  <!-- Urutan WAJIB: storage.js -> ui.js -> halaman.js -> app.js -> akun.js -> tutorial.js -->
   <script src="storage.js"></script>
   <script src="ui.js"></script>
   <script src="halaman.js"></script>
   <script src="app.js"></script>
   <script src="akun.js"></script>
+  <script src="tutorial.js"></script>
 </body>
 </html>

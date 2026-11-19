@@ -1,5 +1,5 @@
 /* ================================================================
-   STORAGE.JS - URUSAN DATA (SIMPAN / AMBIL)  [aplikasi v1.4.6, data skema 2]
+   STORAGE.JS - URUSAN DATA (SIMPAN / AMBIL)  [aplikasi v1.5.0, data skema 2]
    Semua akses data aplikasi lewat objek "Data" di file ini.
    File lain (ui.js, halaman.js, app.js) TIDAK menyentuh localStorage.
 
@@ -26,7 +26,7 @@
 let KUNCI_DATA = "keuangan.v2";   /* diatur akun.js sesuai akun aktif */
 let KUNCI_LAMA = "keuangan.v1";
 
-const VERSI_APP = "1.4.6";
+const VERSI_APP = "1.5.0";
 
 const MODE_TEMA = ["auto", "terang", "gelap"];
 

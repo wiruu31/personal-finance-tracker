@@ -1,5 +1,5 @@
 /* ================================================================
-   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [aplikasi v1.4.6]
+   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [aplikasi v1.5.0]
    Tugas file ini: menyimpan "keadaan" aplikasi (bulan, tab aktif),
    memasang semua event (klik, submit), membuka form, lalu memanggil
    Data (storage.js) dan fungsi render (ui.js, halaman.js).
@@ -56,9 +56,23 @@ const angka = (teks) => Number(String(teks || "").replace(/\D/g, "")) || 0;
 /* ===== RENDER & TAB START =====
    Menggambar ulang semua halaman dan berpindah tab.
    ================================================================ */
-async function muatUlang() {
-  state.data = await Data.ambilSemua();
-  render();
+/* denganSkeleton = true: tampilkan kerangka loading dulu. Selama skeleton
+   aktif, tampilannya ditahan minimal 400 ms supaya tidak berkedip
+   (data dari localStorage hampir instan). */
+const TAHAN_SKELETON_MS = 400;
+
+async function muatUlang(denganSkeleton) {
+  if (denganSkeleton && window.Skeleton) window.Skeleton.tampil();
+  const pakai = Boolean(window.Skeleton && window.Skeleton.aktif());
+  const mulai = Date.now();
+  try {
+    state.data = await Data.ambilSemua();
+    const sisa = pakai ? TAHAN_SKELETON_MS - (Date.now() - mulai) : 0;
+    if (sisa > 0) await new Promise((selesai) => setTimeout(selesai, sisa));
+    render();
+  } finally {
+    if (pakai) window.Skeleton.akhir();
+  }
 }
 
 function render() {
@@ -654,14 +668,14 @@ async function imporDariFile(file) {
   if (!confirm("Impor akan MENGGANTI semua data yang ada sekarang. Lanjut?")) return;
   await Data.imporJSON(await file.text());
   toast("data berhasil diimpor");
-  await muatUlang();
+  await muatUlang(true);
 }
 
 async function resetData() {
   if (!confirm("Hapus SEMUA data dan mulai dari awal? Pastikan sudah ekspor cadangan.")) return;
   await Data.resetSemua();
   toast("data direset");
-  await muatUlang();
+  await muatUlang(true);
 }
 /* ===== CADANGAN END ===== */
 
@@ -803,7 +817,10 @@ const AKSI = {
   "ekspor-csv":  () => eksporCSV(),
   "impor":       () => $("#inputImpor").click(),
   "reset-data":  () => resetData(),
-  "pasang-app":  () => pasangAplikasi()
+  "pasang-app":  () => pasangAplikasi(),
+
+  /* Ulang tutorial (tombol di Pengaturan > Bantuan) */
+  "buka-tutorial": () => window.Tutorial && window.Tutorial.mulai()
 };
 
 document.addEventListener("click", (e) => {
@@ -904,11 +921,14 @@ document.addEventListener("DOMContentLoaded", () => {
     $("#tahunCopyright").textContent = new Date().getFullYear();
     $$(".versi-app").forEach((el) => { el.textContent = "v" + VERSI_APP; });
 
-    await muatUlang();
+    await muatUlang(true);   // skeleton tampil selama data dimuat
     pindahTab("home");
     if (Data.dimigrasi) toast("data lama berhasil dipindah ke versi baru");
 
     daftarkanSW();
+
+    /* Pertama kali dibuka: tur pengenalan (tutorial.js) */
+    if (window.Tutorial) window.Tutorial.mulaiOtomatis();
 
     /* Minta browser agar tidak menghapus data otomatis saat memori penuh */
     try {

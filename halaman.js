@@ -1,5 +1,5 @@
 /* ================================================================
-   HALAMAN.JS - MENGGAMBAR SEMUA HALAMAN  [aplikasi v1.4.6]
+   HALAMAN.JS - MENGGAMBAR SEMUA HALAMAN  [aplikasi v1.5.0]
    Tiap fungsi render menerima data (dan bulan / pilihan) lalu
    mengisi HTML ke wadahnya. File ini TIDAK menyimpan data dan
    TIDAK memasang event (itu tugas storage.js dan app.js).
@@ -545,6 +545,11 @@ function renderPengaturan(data, terbuka, pasang) {
       '<button type="button" class="btn" data-aksi="ekspor-csv">ekspor CSV</button>' +
       '<button type="button" class="btn btn--danger" data-aksi="reset-data">reset semua</button></div>');
 
+  /* --- Bantuan: ulang tutorial --- */
+  const bantuan = kartu("Bantuan",
+    '<p class="hint">Lihat lagi tur singkat yang menjelaskan fitur, cara pakai, dan setelan aplikasi. Datamu tidak berubah.</p>' +
+    '<button type="button" class="btn btn--solid" data-aksi="buka-tutorial">Lihat tutorial</button>');
+
   /* --- Tentang --- */
   const tentang = kartu("Tentang aplikasi",
     barisInfo("Versi", "v" + VERSI_APP) +
@@ -567,7 +572,7 @@ function renderPengaturan(data, terbuka, pasang) {
       petunjuk);
   }
 
-  $("#isi-pengaturan").innerHTML = '<div class="grid">' + tampilan + cadangan + kartuPasang + tentang + "</div>" + anggaranKartu;
+  $("#isi-pengaturan").innerHTML = '<div class="grid">' + tampilan + cadangan + kartuPasang + bantuan + tentang + "</div>" + anggaranKartu;
 }
 /* ===== PENGATURAN END ===== */
  
