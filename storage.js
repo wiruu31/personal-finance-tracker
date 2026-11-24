@@ -513,12 +513,20 @@ const Data = {
      Input: { dariId, keId, jumlah, tanggal, catatan }
      Tidak dihitung sebagai income / expense.
      ------------------------------------------------------------ */
-  _cekTransfer(db, t) {
+  _cekTransfer(db, t, idLama) {
     const jumlah = intMin(t.jumlah, 1, "Jumlah harus angka bulat lebih dari 0");
     if (!validTanggal(t.tanggal)) throw new Error("Tanggal tidak valid");
-    if (!db.dompet.some((d) => d.id === t.dariId)) throw new Error("Pilih dompet asal");
+    const asal = db.dompet.find((d) => d.id === t.dariId);
+    if (!asal) throw new Error("Pilih dompet asal");
     if (!db.dompet.some((d) => d.id === t.keId)) throw new Error("Pilih dompet tujuan");
     if (t.dariId === t.keId) throw new Error("Dompet asal dan tujuan harus berbeda");
+    /* Saldo dompet asal tidak boleh jadi minus */
+    const saldo = saldoDompetKini(db, t.dariId, idLama);
+    if (jumlah > saldo) {
+      throw new Error(saldo > 0
+        ? "Saldo " + asal.nama + " tidak cukup. Maksimal " + rupiah(saldo)
+        : "Saldo " + asal.nama + " tidak cukup untuk transfer (" + rupiah(saldo) + ")");
+    }
     return { dariId: t.dariId, keId: t.keId, jumlah: jumlah, tanggal: t.tanggal, catatan: teksBersih(t.catatan, 80) };
   },
 
@@ -534,7 +542,7 @@ const Data = {
     return this._ubah((db) => {
       const i = db.transfer.findIndex((x) => x.id === id);
       if (i < 0) throw new Error("Transfer tidak ditemukan");
-      const baru = this._cekTransfer(db, t);
+      const baru = this._cekTransfer(db, t, id);
       baru.id = id;
       db.transfer[i] = baru;
     });

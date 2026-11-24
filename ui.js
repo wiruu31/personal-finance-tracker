@@ -142,6 +142,17 @@ function saldoDompetPada(data, dompetId, tgl) {
   return saldo;
 }
 
+/* --- Dompet: saldo saat ini, boleh mengabaikan satu transfer ---
+   Dipakai validasi & form transfer. Saat mengubah transfer lama,
+   transfer itu diabaikan supaya saldo yang tampil = saldo sebelum
+   transfer tersebut terjadi. */
+function saldoDompetKini(data, dompetId, abaikanTransferId) {
+  const salinan = Object.assign({}, data, {
+    transfer: data.transfer.filter((x) => x.id !== abaikanTransferId)
+  });
+  return saldoDompetPada(salinan, dompetId, "9999-12-31");
+}
+
 /* --- Aset: nilai pada tanggal tertentu (0 kalau belum dibeli) --- */
 function nilaiAsetPada(aset, tgl) {
   let nilai = 0;

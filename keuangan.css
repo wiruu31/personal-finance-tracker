@@ -778,6 +778,13 @@ input:focus, select:focus {
 .field { display: grid; gap: 6px; margin-bottom: 14px; min-width: 0; }
 .field label { font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.saldo-transfer { display: grid; gap: 6px; margin: -2px 0 14px; padding: 10px 12px; border-radius: 12px; background: var(--aksen-lembut); font-size: 13px; }
+.saldo-baris { display: flex; justify-content: space-between; gap: 10px; }
+.saldo-baris--maks { padding-top: 6px; border-top: 1px dashed var(--border-kuat); font-weight: 600; }
+.saldo-nilai { font-weight: 700; white-space: nowrap; }
+.saldo-nilai.is-minus { color: var(--keluar); }
+.saldo-peringatan { margin: 2px 0 0; font-weight: 600; color: var(--keluar); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
 .preview { min-height: 1.3em; font-size: 14px; font-weight: 700; color: var(--aktx); }
 
 .sheet-actions { display: flex; gap: 10px; margin-top: 6px; }

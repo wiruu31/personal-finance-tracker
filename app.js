@@ -380,6 +380,8 @@ function bukaFormUmum(cfg) {
   $("#btnHapusUmum").hidden = !cfg.hapus;
   $("#btnSimpanUmum").textContent = cfg.labelSimpan || "simpan";
   isiPreviewUang($("#isiUmum"));
+  $("#btnSimpanUmum").disabled = false;
+  if (cfg.sesudahBuka) cfg.sesudahBuka();
   bukaDialog($("#dialogUmum"));
 }
 
@@ -453,6 +455,38 @@ function formDompet(id) {
 }
 
 /* --- Transfer antar dompet --- */
+/* Tampilkan saldo dompet "dari" & "ke", batas maksimal transfer, dan
+   matikan tombol simpan kalau jumlah melebihi saldo "dari". */
+function perbaruiInfoTransfer(idTransfer) {
+  const form = $("#formUmum");
+  const panel = $("#infoSaldoTransfer");
+  if (!form || !panel) return;
+  const data = state.data;
+  const dariId = form.elements.dariId.value;
+  const keId = form.elements.keId.value;
+  const saldoDari = saldoDompetKini(data, dariId, idTransfer);
+  const saldoKe = saldoDompetKini(data, keId, idTransfer);
+  const jumlah = angka(form.elements.jumlah.value);
+
+  let pesan = "";
+  if (dariId === keId) pesan = "Dompet asal dan tujuan harus berbeda";
+  else if (saldoDari <= 0) pesan = "Saldo " + namaDompet(data, dariId) + " tidak cukup untuk transfer";
+  else if (jumlah > saldoDari) pesan = "Jumlah melebihi saldo. Maksimal " + rupiah(saldoDari);
+
+  const baris = (label, id, saldo) =>
+    '<div class="saldo-baris"><span>' + label + " <b>" + esc(namaDompet(data, id)) + "</b></span>" +
+    '<span class="saldo-nilai' + (saldo < 0 ? " is-minus" : "") + '">' + rupiah(saldo) + "</span></div>";
+
+  panel.innerHTML =
+    baris("saldo dari", dariId, saldoDari) +
+    baris("saldo ke", keId, saldoKe) +
+    '<div class="saldo-baris saldo-baris--maks"><span>bisa ditransfer maks.</span><span class="saldo-nilai">' +
+    rupiah(Math.max(saldoDari, 0)) + "</span></div>" +
+    (pesan ? '<p class="saldo-peringatan" role="alert">' + esc(pesan) + "</p>" : "");
+
+  $("#btnSimpanUmum").disabled = Boolean(pesan);
+}
+
 function formTransfer(id) {
   const t = id ? state.data.transfer.find((x) => x.id === id) : null;
   const dompet = opsiDompet();
@@ -469,7 +503,13 @@ function formTransfer(id) {
     simpan: (v) => (t ? Data.ubahTransfer(t.id, v) : Data.tambahTransfer(v)),
     hapus: t ? () => Data.hapusTransfer(t.id) : null,
     konfirmasiHapus: "Hapus transfer ini?",
-    pesan: "transfer tersimpan"
+    pesan: "transfer tersimpan",
+    sesudahBuka: () => {
+      const baris = $("#isiUmum .field-row");
+      if (baris) baris.insertAdjacentHTML("afterend", '<div class="saldo-transfer" id="infoSaldoTransfer" aria-live="polite"></div>');
+      perbaruiInfoTransfer(id);
+    },
+    saatUbah: () => perbaruiInfoTransfer(id)
   });
 }
 
@@ -871,6 +911,7 @@ document.addEventListener("input", (e) => {
       p.textContent = n > 0 ? rupiah(n) : "";
     }
   }
+  if (state.umum && state.umum.saatUbah && e.target.closest && e.target.closest("#formUmum")) state.umum.saatUbah();
   if (e.target.id === "inputCari") {
     state.cari = e.target.value;
     renderTransaksi(state.data, state.bulan, state.filter, state.cari);
@@ -882,6 +923,7 @@ document.addEventListener("input", (e) => {
 });
 
 document.addEventListener("change", (e) => {
+  if (state.umum && state.umum.saatUbah && e.target.closest && e.target.closest("#formUmum")) state.umum.saatUbah();
   if (e.target.dataset && e.target.dataset.warna) {
     aman(() => simpanPengaturan(bacaWarnaKustom(), "warna tema diubah"));
   }
