@@ -2,7 +2,16 @@
 
 Catatan keuangan pribadi yang jalan di browser: net worth, dompet, aset, utang, budget, goals. Bisa dipasang seperti aplikasi (PWA) dan jalan tanpa internet. Data tersimpan di perangkat, tidak dikirim ke mana pun.
 
-**Versi: 1.5.0** (tutorial awal dan skeleton loading)
+**Versi: 1.5.1** (saldo dompet tidak bisa minus)
+
+## Perbaikan v1.5.1: saldo dompet tidak bisa minus
+
+- **Transaksi baru (Expense)**, **Tambah dana goal**, dan **Aset baru** sekarang menolak jumlah yang melebihi saldo dompet yang dipilih. Sebelumnya hanya transfer yang dicek.
+- Pilihan dompet menampilkan **saldo yang bisa dipakai** di belakang namanya, misal `Tunai - Rp 73.000`.
+- Kalau jumlah melebihi saldo, muncul peringatan merah di bawah pilihan dompet (berisi saldo maksimal) dan tombol **simpan** mati. Pengecekan juga ada di `storage.js` (`_cekSaldoCukup`), jadi tetap aman walau form dilewati.
+- Mengubah pengeluaran lama: nilai lamanya tidak dihitung dua kali, jadi pengeluaran yang sudah ada tetap bisa diedit selama hasilnya tidak membuat saldo minus.
+- Income tidak dibatasi. Saldo yang dipakai = saldo awal + semua transaksi + transfer (termasuk yang tanggalnya ke depan), sama seperti validasi transfer.
+- Cache service worker naik ke `keuangan-v1.5.1`.
 
 ## Fitur v1.5.0: tutorial dan skeleton loading
 

@@ -1,5 +1,5 @@
 /* ================================================================
-   AKUN.JS - BANYAK AKUN, DATA TIAP AKUN TERPISAH  [aplikasi v1.5.0]
+   AKUN.JS - BANYAK AKUN, DATA TIAP AKUN TERPISAH  [aplikasi v1.5.1]
    Tiap akun punya penyimpanan sendiri di browser (localStorage).
    Akun pertama ("Utama") memakai penyimpanan lama "keuangan.v2",
    jadi data yang sudah ada tidak berpindah dan tidak hilang.

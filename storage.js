@@ -410,6 +410,7 @@ const Data = {
     const kategori = db.kategori.find((k) => k.id === t.kategoriId && (k.tipe === "masuk" || k.tipe === "keluar"));
     if (!kategori) throw new Error("Pilih kategori dulu");
     if (!db.dompet.some((d) => d.id === t.dompetId)) throw new Error("Pilih dompet dulu");
+    if (kategori.tipe === "keluar") this._cekSaldoCukup(db, t.dompetId, jumlah, idLama);
 
     const hasil = {
       dompetId: t.dompetId,
@@ -431,6 +432,19 @@ const Data = {
       hasil.utangId = u.id;
     }
     return hasil;
+  },
+
+  /* Saldo dompet tidak boleh jadi minus karena pengeluaran baru.
+     idTrxLama = transaksi yang sedang diubah (efek lamanya diabaikan). */
+  _cekSaldoCukup(db, dompetId, jumlah, idTrxLama) {
+    const d = db.dompet.find((x) => x.id === dompetId);
+    if (!d) throw new Error("Pilih dompet dulu");
+    const saldo = saldoDompetKini(db, dompetId, null, idTrxLama);
+    if (jumlah > saldo) {
+      throw new Error(saldo > 0
+        ? "Saldo " + d.nama + " tidak cukup. Maksimal " + rupiah(saldo)
+        : "Saldo " + d.nama + " tidak cukup (" + rupiah(saldo) + ")");
+    }
   },
 
   /* Transaksi kategori Invest & Savings: tujuan = "goal:<id>" atau "aset:<id>".
@@ -666,6 +680,8 @@ const Data = {
       baru.modal = intMin(a.modal, 1, "Modal harus angka bulat lebih dari 0");
       const nilai = intMin(a.nilai === "" || a.nilai == null ? a.modal : a.nilai, 0, "Nilai harus angka bulat");
       if (!validTanggal(a.tanggal)) throw new Error("Tanggal tidak valid");
+      if (!db.dompet.some((d) => d.id === sumberDompetId)) throw new Error("Dompet sumber tidak ditemukan");
+      this._cekSaldoCukup(db, sumberDompetId, baru.modal, null);
       baru.id = buatId();
       baru.riwayat = [{ tanggal: a.tanggal, nilai: baru.modal }];
       if (nilai !== baru.modal) baru.riwayat.push({ tanggal: a.tanggal > hariIniDB() ? a.tanggal : hariIniDB(), nilai: nilai });
@@ -815,6 +831,7 @@ const Data = {
 
       const setor = { id: buatId(), tanggal: s.tanggal, jumlah: jumlah, catatan: teksBersih(s.catatan, 80) };
       if (!db.dompet.some((d) => d.id === dompetId)) throw new Error("Dompet tidak ditemukan");
+      this._cekSaldoCukup(db, dompetId, jumlah, null);
       const kat = cariKategori(db, "keluar", POLA_TABUNG);
       const trxId = buatId();
       db.transaksi.push({

@@ -1,5 +1,5 @@
 /* ================================================================
-   UI.JS - HELPER, PERHITUNGAN, GRAFIK, TEMA  [aplikasi v1.5.0]
+   UI.JS - HELPER, PERHITUNGAN, GRAFIK, TEMA  [aplikasi v1.5.1]
    Isi file ini: helper format (rupiah, tanggal), fungsi hitung
    (net worth, aset, utang, budget vs actual), penggambar grafik
    (donat & garis, SVG murni tanpa library), dan penerap tema.
@@ -145,10 +145,12 @@ function saldoDompetPada(data, dompetId, tgl) {
 /* --- Dompet: saldo saat ini, boleh mengabaikan satu transfer ---
    Dipakai validasi & form transfer. Saat mengubah transfer lama,
    transfer itu diabaikan supaya saldo yang tampil = saldo sebelum
-   transfer tersebut terjadi. */
-function saldoDompetKini(data, dompetId, abaikanTransferId) {
+   transfer tersebut terjadi. Parameter ke-4 (abaikanTrxId) berlaku sama
+   untuk transaksi: dipakai saat mengubah pengeluaran lama. */
+function saldoDompetKini(data, dompetId, abaikanTransferId, abaikanTrxId) {
   const salinan = Object.assign({}, data, {
-    transfer: data.transfer.filter((x) => x.id !== abaikanTransferId)
+    transfer: data.transfer.filter((x) => x.id !== abaikanTransferId),
+    transaksi: data.transaksi.filter((x) => x.id !== abaikanTrxId)
   });
   return saldoDompetPada(salinan, dompetId, "9999-12-31");
 }

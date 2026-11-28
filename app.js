@@ -1,5 +1,5 @@
 /* ================================================================
-   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [aplikasi v1.5.0]
+   APP.JS - OTAK APLIKASI (PENGHUBUNG)  [aplikasi v1.5.1]
    Tugas file ini: menyimpan "keadaan" aplikasi (bulan, tab aktif),
    memasang semua event (klik, submit), membuka form, lalu memanggil
    Data (storage.js) dan fungsi render (ui.js, halaman.js).
@@ -198,12 +198,44 @@ function perbaruiTujuan() {
   if (sel.selectedIndex < 0) sel.selectedIndex = 0;
 }
 
+/* Pengeluaran lama yang sedang diubah: efeknya diabaikan supaya saldo yang
+   tampil sama dengan saldo yang dipakai validasi. */
+function trxKeluarDiubah() {
+  const t = state.editId ? state.data.transaksi.find((x) => x.id === state.editId) : null;
+  return t && t.tipe === "keluar" ? t.id : null;
+}
+
 function isiDompet(pilih) {
   const sel = $("#fDompet");
+  const abaikan = trxKeluarDiubah();
   sel.innerHTML = state.data.dompet
-    .map((d) => '<option value="' + esc(d.id) + '">' + esc(d.nama) + "</option>")
+    .map((d) => '<option value="' + esc(d.id) + '">' +
+      esc(d.nama + " - " + rupiah(saldoDompetKini(state.data, d.id, null, abaikan))) + "</option>")
     .join("");
   if (pilih) sel.value = pilih;
+}
+
+/* Pengeluaran melebihi saldo dompet: tampilkan peringatan, matikan tombol simpan */
+function perbaruiSaldoTransaksi() {
+  const info = $("#fSaldoInfo");
+  const tombol = $("#btnSimpanTransaksi");
+  if (!info || !tombol) return;
+  const tipe = $("#formTransaksi").elements.tipe.value;
+  const dompetId = $("#fDompet").value;
+  const d = state.data.dompet.find((x) => x.id === dompetId);
+  let pesan = "";
+  if (tipe === "keluar" && d) {
+    const saldo = saldoDompetKini(state.data, dompetId, null, trxKeluarDiubah());
+    const jumlah = angka($("#fJumlah").value);
+    if (jumlah > saldo) {
+      pesan = saldo > 0
+        ? "Jumlah melebihi saldo " + d.nama + ". Maksimal " + rupiah(saldo)
+        : "Saldo " + d.nama + " tidak cukup (" + rupiah(saldo) + ")";
+    }
+  }
+  info.textContent = pesan;
+  info.hidden = !pesan;
+  tombol.disabled = Boolean(pesan);
 }
 
 function perbaruiPreview() {
@@ -259,6 +291,7 @@ function bukaForm(id, opsi) {
   form.querySelectorAll("input, select").forEach((el) => { el.disabled = Boolean(taut); });
   $("#fKategori").disabled = Boolean(taut || (t && t.utangId));
   $("#btnSimpanTransaksi").hidden = Boolean(taut);
+  perbaruiSaldoTransaksi();
 
   bukaDialog($("#dialogTransaksi"));
 }
@@ -320,10 +353,11 @@ function pasangDialog() {
   $("#formTransaksi").addEventListener("change", (e) => {
     if (e.target.name === "tipe") isiKategori(e.target.value, "");
     else if (e.target.id === "fKategori") perbaruiTujuan();
+    perbaruiSaldoTransaksi();
   });
 
   /* Pratinjau "Rp ..." saat mengetik jumlah */
-  $("#fJumlah").addEventListener("input", perbaruiPreview);
+  $("#fJumlah").addEventListener("input", () => { perbaruiPreview(); perbaruiSaldoTransaksi(); });
 }
 /* ===== FORM TRANSAKSI END ===== */
 
@@ -433,6 +467,37 @@ function isiPreviewUang(wadah) {
    goal, tambah dana goal, kategori, budget.
    ================================================================ */
 const opsiDompet = () => state.data.dompet.map((d) => [d.id, d.nama + " (" + namaJenis(d.jenis) + ")"]);
+/* Sama seperti opsiDompet, tapi dengan saldo yang bisa dipakai di belakang nama */
+const opsiDompetSaldo = () => state.data.dompet.map((d) =>
+  [d.id, d.nama + " (" + namaJenis(d.jenis) + ") - " + rupiah(saldoDompetKini(state.data, d.id))]);
+
+/* Form umum yang mengambil uang dari dompet (setoran goal, beli aset):
+   peringatan di bawah pilihan dompet + tombol simpan mati kalau saldo kurang. */
+function perbaruiSaldoUmum(namaDompet, namaJumlah) {
+  const form = $("#formUmum");
+  const panel = $("#infoSaldoUmum");
+  if (!form || !panel || !form.elements[namaDompet]) return;
+  const dompetId = form.elements[namaDompet].value;
+  const d = state.data.dompet.find((x) => x.id === dompetId);
+  const saldo = saldoDompetKini(state.data, dompetId);
+  const jumlah = angka(form.elements[namaJumlah].value);
+  let pesan = "";
+  if (d && jumlah > saldo) {
+    pesan = saldo > 0
+      ? "Jumlah melebihi saldo " + d.nama + ". Maksimal " + rupiah(saldo)
+      : "Saldo " + d.nama + " tidak cukup (" + rupiah(saldo) + ")";
+  }
+  panel.textContent = pesan;
+  panel.hidden = !pesan;
+  $("#btnSimpanUmum").disabled = Boolean(pesan);
+}
+
+function pasangSaldoUmum(namaDompet, namaJumlah) {
+  const field = $("#formUmum").elements[namaDompet].closest(".field");
+  field.insertAdjacentHTML("afterend", '<p class="saldo-peringatan" id="infoSaldoUmum" role="alert" hidden></p>');
+  perbaruiSaldoUmum(namaDompet, namaJumlah);
+}
+
 const opsiKategori = (tipe) => state.data.kategori.filter((k) => k.tipe === tipe).map((k) => [k.id, k.nama]);
 const tanggalAwal = () => (state.bulan === bulanSekarang() ? hariIni() : state.bulan + "-01");
 
@@ -529,7 +594,7 @@ function formAset(id) {
       { nama: "nilai", label: "nilai sekarang (Rp, kosong = sama dengan modal)", tipe: "uang", opsional: true },
       { nama: "tanggal", label: "tanggal beli", tipe: "date", nilai: tanggalAwal(), wajib: true },
       { nama: "sumber", label: "bayar dari dompet", tipe: "select", nilai: state.dompetTerakhir || opsiDompet()[0][0],
-        opsi: opsiDompet(), wajib: true }
+        opsi: opsiDompetSaldo(), wajib: true }
     );
   }
   fields.push({ nama: "catatan", label: "catatan (opsional)", tipe: "text", nilai: a ? a.catatan : "", maks: 80 });
@@ -542,7 +607,9 @@ function formAset(id) {
     simpan: (v) => (a ? Data.ubahAset(a.id, v) : Data.tambahAset(v, v.sumber)),
     hapus: a ? () => Data.hapusAset(a.id) : null,
     konfirmasiHapus: "Hapus aset ini? (transaksi pembeliannya tidak ikut terhapus)",
-    pesan: a ? "aset diubah" : "aset ditambahkan"
+    pesan: a ? "aset diubah" : "aset ditambahkan",
+    sesudahBuka: a ? null : () => pasangSaldoUmum("sumber", "modal"),
+    saatUbah: a ? null : () => perbaruiSaldoUmum("sumber", "modal")
   });
 }
 
@@ -615,11 +682,13 @@ function formSetoran(goalId) {
       { nama: "jumlah", label: "jumlah (Rp)", tipe: "uang", nilai: i.perBulan || "", wajib: true },
       { nama: "tanggal", label: "tanggal", tipe: "date", nilai: hariIni(), wajib: true },
       { nama: "dompetId", label: "ambil dari dompet", tipe: "select", nilai: state.dompetTerakhir || opsiDompet()[0][0],
-        opsi: opsiDompet(), wajib: true },
+        opsi: opsiDompetSaldo(), wajib: true },
       { nama: "catatan", label: "catatan (opsional)", tipe: "text", maks: 80 }
     ],
     simpan: (v) => Data.tambahSetoran(g.id, v, v.dompetId),
-    pesan: "dana ditambahkan"
+    pesan: "dana ditambahkan",
+    sesudahBuka: () => pasangSaldoUmum("dompetId", "jumlah"),
+    saatUbah: () => perbaruiSaldoUmum("dompetId", "jumlah")
   });
 }
 

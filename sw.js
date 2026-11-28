@@ -13,7 +13,7 @@
    INTI di bawah. Ganti VERSI kalau mau memaksa cache dibuang.
    ================================================================ */
 
-const VERSI = "keuangan-v1.5.0";
+const VERSI = "keuangan-v1.5.1";
 
 const INTI = [
   "./",

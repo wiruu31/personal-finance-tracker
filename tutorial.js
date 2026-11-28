@@ -1,5 +1,5 @@
 /* ================================================================
-   TUTORIAL.JS - TUR PENGENALAN + SKELETON LOADING  [aplikasi v1.5.0]
+   TUTORIAL.JS - TUR PENGENALAN + SKELETON LOADING  [aplikasi v1.5.1]
    Dua hal di file ini:
    1. Skeleton   : kerangka abu berdenyut selama data dimuat.
    2. Tutorial   : tur sorotan 13 langkah (fitur, cara pakai, setelan).
